@@ -1,6 +1,9 @@
 import { SimulationConfig } from "@config/config";
 import { World } from "@core/world";
 import { Position, SparklingState, SparklingStats, Velocity } from "./sparklingTypes";
+import { Memory } from "./memory";
+import { MemoryEventType } from "./memoryTypes";
+import { TerrainType } from "@core/terrain";
 
 /**
  * Class representing a Sparkling entity in the simulation
@@ -17,9 +20,15 @@ export class Sparkling {
   private color: string;
   private targetPosition: Position | null = null;
   
+  // Memory system
+  private memory: Memory;
+  private totalTime: number = 0;
+  
   // Movement and behavior
   private stateTimer: number = 0;
   private idleTime: number = 0;
+  private lastResourceCheck: number = 0;
+  private lastTerrainCheck: number = 0;
   
   /**
    * Create a new Sparkling
@@ -47,6 +56,9 @@ export class Sparkling {
       collectionRate: 10 // Units per second
     };
     
+    // Initialize memory system
+    this.memory = new Memory(config);
+    
     // Assign a random color to this Sparkling
     this.color = this.generateRandomColor();
   }
@@ -64,11 +76,18 @@ export class Sparkling {
    * Update the Sparkling's state and position
    */
   public update(deltaTime: number, world: World): void {
+    // Update total time and memory system's time
+    this.totalTime += deltaTime;
+    this.memory.updateTime(this.totalTime);
+    
     // Update state timer
     this.stateTimer += deltaTime;
     
     // Consume resources over time
     this.consumeResources(deltaTime);
+    
+    // Check surroundings and update memory
+    this.updateMemoryFromSurroundings(world, deltaTime);
     
     // Make decisions based on current state
     this.updateState(world);
@@ -99,6 +118,81 @@ export class Sparkling {
   }
   
   /**
+   * Update memory based on what the Sparkling observes
+   */
+  private updateMemoryFromSurroundings(world: World, deltaTime: number): void {
+    // Check for resources periodically
+    if (this.totalTime - this.lastResourceCheck > 1.0) { // Check every second
+      this.lastResourceCheck = this.totalTime;
+      this.checkForResourcesAndUpdateMemory(world);
+    }
+    
+    // Check terrain periodically
+    if (this.totalTime - this.lastTerrainCheck > 3.0) { // Check every 3 seconds
+      this.lastTerrainCheck = this.totalTime;
+      this.checkTerrainAndUpdateMemory(world);
+    }
+  }
+  
+  /**
+   * Check for resources in the vicinity and update memory
+   */
+  private checkForResourcesAndUpdateMemory(world: World): void {
+    const searchRadiusInCells = Math.floor(this.stats.sensorRadius / 20);
+    
+    // Search the grid cells around the current position
+    for (let dy = -searchRadiusInCells; dy <= searchRadiusInCells; dy++) {
+      for (let dx = -searchRadiusInCells; dx <= searchRadiusInCells; dx++) {
+        const cell = world.getCell(
+          this.position.x + dx * 20, 
+          this.position.y + dy * 20
+        );
+        
+        if (cell) {
+          // Calculate distance to this cell
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          
+          // Skip if too far away
+          if (distance > searchRadiusInCells) continue;
+          
+          // If we found resources, remember it
+          if (cell.resources > 0) {
+            this.memory.addResourceMemory(
+              MemoryEventType.RESOURCE_FOUND,
+              { x: cell.x * 20 + 10, y: cell.y * 20 + 10 },
+              cell.resources
+            );
+          }
+          
+          // If we found neural energy, remember it
+          if (cell.neuralEnergy > 0) {
+            this.memory.addEnergyMemory(
+              MemoryEventType.ENERGY_FOUND,
+              { x: cell.x * 20 + 10, y: cell.y * 20 + 10 },
+              cell.neuralEnergy
+            );
+          }
+        }
+      }
+    }
+  }
+  
+  /**
+   * Check terrain type at current position and update memory
+   */
+  private checkTerrainAndUpdateMemory(world: World): void {
+    const cell = world.getCell(this.position.x, this.position.y);
+    if (cell) {
+      // Record the terrain type we're currently on
+      this.memory.addTerrainMemory(
+        { x: cell.x * 20 + 10, y: cell.y * 20 + 10 },
+        cell.terrain,
+        1 // Size estimate - could be improved with clustering
+      );
+    }
+  }
+  
+  /**
    * Update the Sparkling's state based on its conditions
    */
   private updateState(world: World): void {
@@ -116,13 +210,13 @@ export class Sparkling {
         if (this.food < this.stats.maxFood * 0.3) {
           this.state = SparklingState.SEEKING_FOOD;
           this.stateTimer = 0;
-          this.targetPosition = null;
+          this.targetPosition = this.findTargetFromMemory(MemoryEventType.RESOURCE_FOUND);
         }
         // If neural energy is low, prioritize finding energy
         else if (this.neuralEnergy < this.stats.maxNeuralEnergy * 0.3) {
           this.state = SparklingState.SEEKING_ENERGY;
           this.stateTimer = 0;
-          this.targetPosition = null;
+          this.targetPosition = this.findTargetFromMemory(MemoryEventType.ENERGY_FOUND);
         }
         // If we've been exploring for a while, take a rest
         else if (this.stateTimer > 10) {
@@ -146,9 +240,20 @@ export class Sparkling {
           this.targetPosition = null;
           this.setRandomMovement();
         }
-        // Look for food in vicinity
+        // Look for food in vicinity or use memory
         else {
-          this.lookForResources(world, true);
+          // If we don't have a target or reached our target, find a new one
+          if (!this.targetPosition || 
+              (this.targetPosition && this.isAtPosition(this.targetPosition))) {
+            
+            // First try to find a target from memory
+            this.targetPosition = this.findTargetFromMemory(MemoryEventType.RESOURCE_FOUND);
+            
+            // If we don't have a remembered target, look for visible resources
+            if (!this.targetPosition) {
+              this.lookForResources(world, true);
+            }
+          }
         }
         break;
         
@@ -160,9 +265,20 @@ export class Sparkling {
           this.targetPosition = null;
           this.setRandomMovement();
         }
-        // Look for neural energy in vicinity
+        // Look for neural energy in vicinity or use memory
         else {
-          this.lookForResources(world, false);
+          // If we don't have a target or reached our target, find a new one
+          if (!this.targetPosition || 
+              (this.targetPosition && this.isAtPosition(this.targetPosition))) {
+            
+            // First try to find a target from memory
+            this.targetPosition = this.findTargetFromMemory(MemoryEventType.ENERGY_FOUND);
+            
+            // If we don't have a remembered target, look for visible resources
+            if (!this.targetPosition) {
+              this.lookForResources(world, false);
+            }
+          }
         }
         break;
         
@@ -189,6 +305,30 @@ export class Sparkling {
         }
         break;
     }
+  }
+  
+  /**
+   * Find a target position from memory
+   */
+  private findTargetFromMemory(type: MemoryEventType): Position | null {
+    // Find the nearest memory of this type
+    const nearestMemory = this.memory.findNearestMemory(this.position, type);
+    
+    if (nearestMemory) {
+      return { ...nearestMemory.position };
+    }
+    
+    return null;
+  }
+  
+  /**
+   * Check if the Sparkling is at a specific position
+   */
+  private isAtPosition(position: Position): boolean {
+    const dx = this.position.x - position.x;
+    const dy = this.position.y - position.y;
+    const distanceSquared = dx * dx + dy * dy;
+    return distanceSquared < 25; // Distance of 5 units
   }
   
   /**
@@ -313,7 +453,25 @@ export class Sparkling {
         this.position.y, 
         foodToCollect
       );
-      this.food = Math.min(this.stats.maxFood, this.food + collected);
+      
+      // If we collected something, remember it
+      if (collected > 0) {
+        this.food = Math.min(this.stats.maxFood, this.food + collected);
+        
+        // Add to memory
+        this.memory.addResourceMemory(
+          MemoryEventType.RESOURCE_FOUND,
+          { ...this.position },
+          collected
+        );
+      } else if (foodToCollect > 0) {
+        // If we tried to collect but there was nothing, remember it's depleted
+        this.memory.addResourceMemory(
+          MemoryEventType.RESOURCE_DEPLETED,
+          { ...this.position },
+          0
+        );
+      }
     }
     
     // Try to collect neural energy if we need it
@@ -323,7 +481,25 @@ export class Sparkling {
         this.position.y, 
         energyToCollect
       );
-      this.neuralEnergy = Math.min(this.stats.maxNeuralEnergy, this.neuralEnergy + collected);
+      
+      // If we collected something, remember it
+      if (collected > 0) {
+        this.neuralEnergy = Math.min(this.stats.maxNeuralEnergy, this.neuralEnergy + collected);
+        
+        // Add to memory
+        this.memory.addEnergyMemory(
+          MemoryEventType.ENERGY_FOUND,
+          { ...this.position },
+          collected
+        );
+      } else if (energyToCollect > 0) {
+        // If we tried to collect but there was nothing, remember it's depleted
+        this.memory.addEnergyMemory(
+          MemoryEventType.ENERGY_DEPLETED,
+          { ...this.position },
+          0
+        );
+      }
     }
   }
   
@@ -348,9 +524,20 @@ export class Sparkling {
   }
   
   /**
+   * Record an encounter with another Sparkling
+   */
+  public recordEncounter(otherSparkling: Sparkling, outcome: 'neutral' | 'positive' | 'negative'): void {
+    this.memory.addEncounterMemory(
+      { ...this.position },
+      otherSparkling.getId(),
+      outcome
+    );
+  }
+  
+  /**
    * Render the Sparkling on the canvas
    */
-  public render(context: CanvasRenderingContext2D): void {
+  public render(context: CanvasRenderingContext2D, debug: boolean = false): void {
     // Calculate the body size based on food level
     const bodySize = 10 + (this.food / this.stats.maxFood) * 5;
     
@@ -379,6 +566,94 @@ export class Sparkling {
       this.position.x, 
       this.position.y - bodySize - 5
     );
+    
+    // Draw the target position if we have one and debug is enabled
+    if (debug && this.targetPosition) {
+      context.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+      context.beginPath();
+      context.moveTo(this.position.x, this.position.y);
+      context.lineTo(this.targetPosition.x, this.targetPosition.y);
+      context.stroke();
+      
+      context.fillStyle = 'rgba(255, 255, 255, 0.7)';
+      context.beginPath();
+      context.arc(this.targetPosition.x, this.targetPosition.y, 3, 0, Math.PI * 2);
+      context.fill();
+    }
+    
+    // Draw memory visualization if debug is enabled
+    if (debug) {
+      this.renderMemory(context);
+    }
+  }
+  
+  /**
+   * Render the Sparkling's memory
+   */
+  private renderMemory(context: CanvasRenderingContext2D): void {
+    const memories = this.memory.getAllMemories();
+    
+    // Draw a line to connect recent memories
+    if (memories.length > 0) {
+      context.strokeStyle = `rgba(${parseInt(this.color.substr(1, 2), 16)}, ${parseInt(this.color.substr(3, 2), 16)}, ${parseInt(this.color.substr(5, 2), 16)}, 0.3)`;
+      context.beginPath();
+      
+      // Start from the Sparkling's current position
+      context.moveTo(this.position.x, this.position.y);
+      
+      // Connect to each memory point
+      const recentMemories = this.memory.getRecentMemories(30); // Last 30 seconds
+      for (const memory of recentMemories) {
+        context.lineTo(memory.position.x, memory.position.y);
+      }
+      
+      context.stroke();
+    }
+    
+    // Draw symbols for each type of memory
+    for (const memory of memories) {
+      let symbol = '';
+      let color = 'white';
+      
+      switch (memory.type) {
+        case MemoryEventType.RESOURCE_FOUND:
+          symbol = '🍎';
+          color = 'rgba(255, 215, 0, 0.7)';
+          break;
+        case MemoryEventType.RESOURCE_DEPLETED:
+          symbol = '✘';
+          color = 'rgba(255, 150, 0, 0.4)';
+          break;
+        case MemoryEventType.ENERGY_FOUND:
+          symbol = '⚡';
+          color = 'rgba(156, 39, 176, 0.7)';
+          break;
+        case MemoryEventType.ENERGY_DEPLETED:
+          symbol = '✘';
+          color = 'rgba(156, 39, 176, 0.4)';
+          break;
+        case MemoryEventType.TERRAIN_DISCOVERED:
+          symbol = '⬢';
+          color = 'rgba(76, 175, 80, 0.5)';
+          break;
+        case MemoryEventType.SPARKLING_ENCOUNTER:
+          symbol = '👁️';
+          color = 'rgba(233, 30, 99, 0.7)';
+          break;
+      }
+      
+      // Draw small dot for the memory
+      context.fillStyle = color;
+      context.beginPath();
+      context.arc(memory.position.x, memory.position.y, 2, 0, Math.PI * 2);
+      context.fill();
+      
+      // Draw symbol or emoji for the memory type
+      if (symbol) {
+        context.font = '8px Arial';
+        context.fillText(symbol, memory.position.x, memory.position.y - 5);
+      }
+    }
   }
   
   /**
@@ -425,5 +700,12 @@ export class Sparkling {
    */
   public getId(): number {
     return this.id;
+  }
+  
+  /**
+   * Get the memory system
+   */
+  public getMemory(): Memory {
+    return this.memory;
   }
 }

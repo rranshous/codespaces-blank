@@ -16,6 +16,7 @@ export class Simulation {
   private sparklings: Sparkling[] = [];
   private isRunning: boolean = false;
   private animationFrameId: number | null = null;
+  private showDebug: boolean = false;
 
   constructor(canvas: HTMLCanvasElement, config: Partial<SimulationConfig> = {}) {
     this.config = getConfig(config);
@@ -103,6 +104,13 @@ export class Simulation {
   }
 
   /**
+   * Toggle debug visualization
+   */
+  public toggleDebug(): void {
+    this.showDebug = !this.showDebug;
+  }
+
+  /**
    * Main animation loop
    */
   private animationLoop(timestamp: number): void {
@@ -127,6 +135,39 @@ export class Simulation {
     for (const sparkling of this.sparklings) {
       sparkling.update(deltaTime, this.world);
     }
+    
+    // Check for sparkling encounters
+    this.checkSparklingEncounters();
+  }
+
+  /**
+   * Check for encounters between sparklings
+   */
+  private checkSparklingEncounters(): void {
+    const encounterRadius = 30; // Distance at which sparklings notice each other
+    
+    for (let i = 0; i < this.sparklings.length; i++) {
+      const sparklingA = this.sparklings[i];
+      const posA = sparklingA.getPosition();
+      
+      for (let j = i + 1; j < this.sparklings.length; j++) {
+        const sparklingB = this.sparklings[j];
+        const posB = sparklingB.getPosition();
+        
+        // Calculate distance between sparklings
+        const dx = posA.x - posB.x;
+        const dy = posA.y - posB.y;
+        const distanceSquared = dx * dx + dy * dy;
+        
+        // If they're close enough, record the encounter
+        if (distanceSquared < encounterRadius * encounterRadius) {
+          // For now, encounters are always neutral
+          // In future implementations, this could depend on competition or cooperation
+          sparklingA.recordEncounter(sparklingB, 'neutral');
+          sparklingB.recordEncounter(sparklingA, 'neutral');
+        }
+      }
+    }
   }
 
   /**
@@ -140,10 +181,38 @@ export class Simulation {
     
     // Draw all sparklings
     for (const sparkling of this.sparklings) {
-      sparkling.render(this.renderer.getContext());
+      sparkling.render(this.renderer.getContext(), this.showDebug);
     }
     
     this.renderer.drawDebugInfo(this.timeManager.getFPS(), this.world);
+    
+    // Draw additional debug information if enabled
+    if (this.showDebug) {
+      this.drawMemoryStats();
+    }
+  }
+  
+  /**
+   * Draw memory statistics for debugging
+   */
+  private drawMemoryStats(): void {
+    const context = this.renderer.getContext();
+    context.fillStyle = 'white';
+    context.font = '12px Arial';
+    
+    let y = 60;
+    context.fillText('Memory Stats:', 10, y);
+    y += 15;
+    
+    for (const sparkling of this.sparklings) {
+      const memory = sparkling.getMemory();
+      context.fillText(
+        `Sparkling ${sparkling.getId()}: ${memory.getCount()}/${memory.getCapacity()} memories`,
+        10, 
+        y
+      );
+      y += 15;
+    }
   }
 
   /**
@@ -158,6 +227,17 @@ export class Simulation {
     const resetButton = document.getElementById('reset');
     if (resetButton) {
       resetButton.addEventListener('click', () => this.reset());
+    }
+    
+    // Add debug toggle button
+    const debugButton = document.createElement('button');
+    debugButton.id = 'toggle-debug';
+    debugButton.textContent = 'Toggle Memory View';
+    debugButton.addEventListener('click', () => this.toggleDebug());
+    
+    const controlsDiv = document.getElementById('controls');
+    if (controlsDiv) {
+      controlsDiv.appendChild(debugButton);
     }
   }
 
