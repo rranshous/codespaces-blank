@@ -191,6 +191,30 @@ export class Simulation {
   public async runInferenceTests(): Promise<void> {
     console.log("Running inference quality tests...");
     
+    // Toggle test results visibility if they already exist
+    let resultsElement = document.getElementById('inference-test-results');
+    if (resultsElement) {
+      // Toggle visibility
+      if (resultsElement.style.display === 'none') {
+        resultsElement.style.display = 'block';
+        // Update button text to indicate toggle functionality
+        const runTestsButton = document.getElementById('run-inference-tests');
+        if (runTestsButton) {
+          runTestsButton.textContent = 'Hide Inference Tests';
+        }
+        // If we're just showing existing results, no need to run tests again
+        return;
+      } else {
+        resultsElement.style.display = 'none';
+        // Update button text to indicate toggle functionality
+        const runTestsButton = document.getElementById('run-inference-tests');
+        if (runTestsButton) {
+          runTestsButton.textContent = 'Show Inference Tests';
+        }
+        return;
+      }
+    }
+    
     // Pause simulation while running tests
     const wasRunning = this.isRunning;
     if (wasRunning) {
@@ -208,26 +232,27 @@ export class Simulation {
     const testSummary = this.inferenceQualityTester.getTestSummary();
     console.log(testSummary);
     
-    // Create or update test results element
-    let resultsElement = document.getElementById('inference-test-results');
-    if (!resultsElement) {
-      resultsElement = document.createElement('div');
-      resultsElement.id = 'inference-test-results';
-      resultsElement.style.position = 'absolute';
-      resultsElement.style.top = '100px';
-      resultsElement.style.left = '20px';
-      resultsElement.style.width = '400px';
-      resultsElement.style.padding = '10px';
-      resultsElement.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
-      resultsElement.style.color = 'white';
-      resultsElement.style.fontFamily = 'monospace';
-      resultsElement.style.fontSize = '12px';
-      resultsElement.style.whiteSpace = 'pre-wrap';
-      resultsElement.style.zIndex = '100';
-      resultsElement.style.maxHeight = '80vh';
-      resultsElement.style.overflowY = 'auto';
-      document.body.appendChild(resultsElement);
-    }
+    // Create test results element
+    resultsElement = document.createElement('div');
+    resultsElement.id = 'inference-test-results';
+    resultsElement.style.position = 'absolute';
+    
+    // Position on right side like other debug info
+    const canvas = this.renderer.getContext().canvas;
+    resultsElement.style.top = '120px';
+    resultsElement.style.right = '20px';
+    resultsElement.style.width = '400px';
+    resultsElement.style.padding = '10px';
+    resultsElement.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+    resultsElement.style.color = 'white';
+    resultsElement.style.fontFamily = 'monospace';
+    resultsElement.style.fontSize = '12px';
+    resultsElement.style.whiteSpace = 'pre-wrap';
+    resultsElement.style.zIndex = '100';
+    resultsElement.style.maxHeight = '80vh';
+    resultsElement.style.overflowY = 'auto';
+    resultsElement.style.textAlign = 'left'; // Ensure text is left-aligned
+    document.body.appendChild(resultsElement);
     
     resultsElement.textContent = testSummary;
     
@@ -237,6 +262,12 @@ export class Simulation {
     // Resume simulation if it was running
     if (wasRunning) {
       this.start();
+    }
+    
+    // Update button text to indicate toggle functionality
+    const runTestsButton = document.getElementById('run-inference-tests');
+    if (runTestsButton) {
+      runTestsButton.textContent = 'Hide Inference Tests';
     }
   }
 

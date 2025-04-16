@@ -15,7 +15,7 @@ export interface AnthropicConfig {
  * Default API configuration values
  */
 export const DEFAULT_ANTHROPIC_CONFIG: AnthropicConfig = {
-  apiKey: process.env.ANTHROPIC_API_KEY || '',
+  apiKey: '', // Remove process.env reference to fix browser error
   model: 'claude-3-haiku-20240307',
   maxTokens: 1000,
   temperature: 0.7,
