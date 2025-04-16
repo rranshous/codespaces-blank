@@ -2,7 +2,7 @@ import { SimulationConfig } from "@config/config";
 import { World } from "@core/world";
 import { Position, SparklingState, SparklingStats, Velocity, InferenceStatus } from "./sparklingTypes";
 import { Memory } from "./memory";
-import { MemoryEventType } from "./memoryTypes";
+import { MemoryEventType, InferenceMemoryEntry } from "./memoryTypes";
 import { TerrainType } from "@core/terrain";
 import { DecisionParameters, BehavioralProfile } from "./decisionParameters";
 import { generateParametersForProfile, createRandomizedParameters } from "./decisionParameterProfiles";
@@ -213,10 +213,21 @@ export class Sparkling {
       this.updateParameters(result.updatedParameters);
       
       // Store reasoning in memory
+      this.memory.addInferenceMemory(
+        { ...this.position },
+        result.reasoning,
+        result.parameterChangeSummary,
+        result.success
+      );
+      
+      // Store the reasoning for use in rendering
       this.lastInferenceReasoning = result.reasoning;
       
       // Log the inference event for debugging
       console.log(`Sparkling ${this.id} performed inference:`, result.reasoning);
+    } else {
+      // Log the failure
+      console.warn(`Sparkling ${this.id} inference failed:`, result.reasoning);
     }
   }
   
@@ -1094,6 +1105,10 @@ export class Sparkling {
           symbol = '👁️';
           color = 'rgba(233, 30, 99, 0.7)';
           break;
+        case MemoryEventType.INFERENCE_PERFORMED:
+          symbol = '🧠';
+          color = 'rgba(33, 150, 243, 0.7)';
+          break;
       }
       
       // Draw small dot for the memory
@@ -1106,6 +1121,25 @@ export class Sparkling {
       if (symbol) {
         context.font = '8px Arial';
         context.fillText(symbol, memory.position.x, memory.position.y - 5);
+      }
+      
+      // For inference memories, draw a special indicator
+      if (memory.type === MemoryEventType.INFERENCE_PERFORMED) {
+        const inferenceMemory = memory as InferenceMemoryEntry;
+        
+        // Draw a larger glow for inference locations
+        const glowSize = inferenceMemory.success ? 8 : 5;
+        context.fillStyle = `rgba(33, 150, 243, ${inferenceMemory.success ? 0.3 : 0.15})`;
+        context.beginPath();
+        context.arc(memory.position.x, memory.position.y, glowSize, 0, Math.PI * 2);
+        context.fill();
+        
+        // Draw a small label for successful inferences
+        if (inferenceMemory.success) {
+          context.fillStyle = 'rgba(255, 255, 255, 0.7)';
+          context.font = '6px Arial';
+          context.fillText('inference', memory.position.x, memory.position.y + 8);
+        }
       }
     }
   }

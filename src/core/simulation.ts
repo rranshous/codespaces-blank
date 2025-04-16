@@ -1,15 +1,20 @@
 import { SimulationConfig, getConfig } from '@config/config';
+import { AnthropicConfig, getAnthropicConfig, isApiConfigValid } from '@config/apiConfig';
 import { Renderer } from '@rendering/renderer';
 import { TimeManager } from '@utils/time';
 import { World, WorldGenerationOptions } from '@core/world';
 import { Sparkling } from '@entities/sparkling';
 import { Position } from '@entities/sparklingTypes';
+import { BehavioralProfile } from '@entities/decisionParameters';
+import { InferenceSystem } from '@core/inference';
+import { InferenceQualityTester } from '@core/inferenceQualityTester';
 
 /**
  * Main simulation class that manages the entire simulation
  */
 export class Simulation {
   private config: SimulationConfig;
+  private apiConfig: AnthropicConfig;
   private renderer: Renderer;
   private timeManager: TimeManager;
   private world: World;
@@ -17,12 +22,22 @@ export class Simulation {
   private isRunning: boolean = false;
   private animationFrameId: number | null = null;
   private showDebug: boolean = false;
+  private inferenceSystem: InferenceSystem;
+  private inferenceQualityTester: InferenceQualityTester;
+  private useMockInference: boolean = true;
 
   constructor(canvas: HTMLCanvasElement, config: Partial<SimulationConfig> = {}) {
     this.config = getConfig(config);
+    this.apiConfig = getAnthropicConfig();
     this.renderer = new Renderer(canvas, this.config);
     this.timeManager = new TimeManager();
     this.world = new World(this.config);
+    this.inferenceSystem = InferenceSystem.getInstance();
+    this.inferenceQualityTester = new InferenceQualityTester();
+    
+    // Default to mock inference if no valid API key
+    this.useMockInference = !isApiConfigValid(this.apiConfig);
+    this.inferenceSystem.setUseMockInference(this.useMockInference);
   }
 
   /**
@@ -108,6 +123,99 @@ export class Simulation {
    */
   public toggleDebug(): void {
     this.showDebug = !this.showDebug;
+  }
+
+  /**
+   * Toggle between mock inference and API inference
+   */
+  public toggleInferenceMode(): void {
+    this.useMockInference = !this.useMockInference;
+    this.inferenceSystem.setUseMockInference(this.useMockInference);
+    
+    // Update button text
+    const inferenceToggleButton = document.getElementById('toggle-inference');
+    if (inferenceToggleButton) {
+      inferenceToggleButton.textContent = this.useMockInference ? 'Using Mock Inference' : 'Using API Inference';
+    }
+    
+    console.log(`Inference mode set to: ${this.useMockInference ? 'Mock' : 'API'}`);
+  }
+  
+  /**
+   * Update Anthropic API configuration
+   */
+  public updateApiConfig(apiConfig: Partial<AnthropicConfig>): void {
+    this.apiConfig = { ...this.apiConfig, ...apiConfig };
+    this.inferenceSystem.updateApiConfig(this.apiConfig);
+    
+    // Update inference mode based on API config validity
+    const isValid = isApiConfigValid(this.apiConfig);
+    if (!isValid && !this.useMockInference) {
+      this.useMockInference = true;
+      this.inferenceSystem.setUseMockInference(true);
+      console.warn("Invalid API configuration. Switched to mock inference.");
+      
+      // Update button text
+      const inferenceToggleButton = document.getElementById('toggle-inference');
+      if (inferenceToggleButton) {
+        inferenceToggleButton.textContent = 'Using Mock Inference';
+      }
+    }
+  }
+  
+  /**
+   * Run inference quality tests
+   */
+  public async runInferenceTests(): Promise<void> {
+    console.log("Running inference quality tests...");
+    
+    // Pause simulation while running tests
+    const wasRunning = this.isRunning;
+    if (wasRunning) {
+      this.stop();
+    }
+    
+    // Use mock inference for tests to avoid API costs
+    const previousMode = this.useMockInference;
+    this.inferenceSystem.setUseMockInference(true);
+    
+    // Run the tests
+    await this.inferenceQualityTester.runAllTests();
+    
+    // Display the results
+    const testSummary = this.inferenceQualityTester.getTestSummary();
+    console.log(testSummary);
+    
+    // Create or update test results element
+    let resultsElement = document.getElementById('inference-test-results');
+    if (!resultsElement) {
+      resultsElement = document.createElement('div');
+      resultsElement.id = 'inference-test-results';
+      resultsElement.style.position = 'absolute';
+      resultsElement.style.top = '100px';
+      resultsElement.style.left = '20px';
+      resultsElement.style.width = '400px';
+      resultsElement.style.padding = '10px';
+      resultsElement.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+      resultsElement.style.color = 'white';
+      resultsElement.style.fontFamily = 'monospace';
+      resultsElement.style.fontSize = '12px';
+      resultsElement.style.whiteSpace = 'pre-wrap';
+      resultsElement.style.zIndex = '100';
+      resultsElement.style.maxHeight = '80vh';
+      resultsElement.style.overflowY = 'auto';
+      document.body.appendChild(resultsElement);
+    }
+    
+    resultsElement.textContent = testSummary;
+    
+    // Restore previous inference mode
+    this.inferenceSystem.setUseMockInference(previousMode);
+    
+    // Resume simulation if it was running
+    if (wasRunning) {
+      this.start();
+    }
   }
 
   /**
@@ -220,6 +328,26 @@ export class Simulation {
       y += 20;
     }
     
+    // Show inference stats
+    y += 10;
+    context.fillText('Inference Stats:', rightEdge, y);
+    y += 20;
+    
+    const metrics = this.inferenceSystem.getInferenceQualityMetrics();
+    context.fillText(`Total inferences: ${metrics.totalInferences}`, rightEdge, y);
+    y += 20;
+    
+    context.fillText(`Success rate: ${
+      metrics.totalInferences ? 
+      ((metrics.successfulInferences / metrics.totalInferences) * 100).toFixed(1) + '%' : 
+      'N/A'
+    }`, rightEdge, y);
+    y += 20;
+    
+    context.fillText(`Avg response time: ${
+      metrics.averageResponseTime.toFixed(2)
+    }ms`, rightEdge, y);
+    
     // Reset text alignment for other rendering
     context.textAlign = 'left';
   }
@@ -244,9 +372,23 @@ export class Simulation {
     debugButton.textContent = 'Toggle Memory View';
     debugButton.addEventListener('click', () => this.toggleDebug());
     
+    // Add inference API toggle button
+    const inferenceToggleButton = document.createElement('button');
+    inferenceToggleButton.id = 'toggle-inference';
+    inferenceToggleButton.textContent = this.useMockInference ? 'Using Mock Inference' : 'Using API Inference';
+    inferenceToggleButton.addEventListener('click', () => this.toggleInferenceMode());
+    
+    // Add inference test button
+    const runTestsButton = document.createElement('button');
+    runTestsButton.id = 'run-inference-tests';
+    runTestsButton.textContent = 'Run Inference Tests';
+    runTestsButton.addEventListener('click', () => this.runInferenceTests());
+    
     const controlsDiv = document.getElementById('controls');
     if (controlsDiv) {
       controlsDiv.appendChild(debugButton);
+      controlsDiv.appendChild(inferenceToggleButton);
+      controlsDiv.appendChild(runTestsButton);
     }
   }
 
@@ -255,6 +397,13 @@ export class Simulation {
    */
   public getConfig(): SimulationConfig {
     return this.config;
+  }
+  
+  /**
+   * Get the current API configuration
+   */
+  public getApiConfig(): AnthropicConfig {
+    return this.apiConfig;
   }
   
   /**
@@ -269,5 +418,19 @@ export class Simulation {
    */
   public getSparklings(): Sparkling[] {
     return [...this.sparklings];
+  }
+  
+  /**
+   * Get the inference system
+   */
+  public getInferenceSystem(): InferenceSystem {
+    return this.inferenceSystem;
+  }
+  
+  /**
+   * Get the inference quality tester
+   */
+  public getInferenceQualityTester(): InferenceQualityTester {
+    return this.inferenceQualityTester;
   }
 }

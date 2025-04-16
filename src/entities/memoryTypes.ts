@@ -10,7 +10,8 @@ export enum MemoryEventType {
   ENERGY_FOUND = 'energy_found',
   ENERGY_DEPLETED = 'energy_depleted',
   TERRAIN_DISCOVERED = 'terrain_discovered',
-  SPARKLING_ENCOUNTER = 'sparkling_encounter'
+  SPARKLING_ENCOUNTER = 'sparkling_encounter',
+  INFERENCE_PERFORMED = 'inference_performed'
 }
 
 /**
@@ -55,4 +56,14 @@ export interface SparklingEncounterMemoryEntry extends MemoryEntry {
   type: MemoryEventType.SPARKLING_ENCOUNTER;
   sparklingId: number;
   outcome: 'neutral' | 'positive' | 'negative';  // How the encounter went
+}
+
+/**
+ * Memory of performing inference
+ */
+export interface InferenceMemoryEntry extends MemoryEntry {
+  type: MemoryEventType.INFERENCE_PERFORMED;
+  reasoning: string;
+  parameterChanges: string; // Summary of what was changed
+  success: boolean;
 }

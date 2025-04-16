@@ -1,5 +1,5 @@
 import { SimulationConfig } from "@config/config";
-import { MemoryEntry, MemoryEventType, ResourceMemoryEntry, EnergyMemoryEntry, TerrainMemoryEntry, SparklingEncounterMemoryEntry } from "./memoryTypes";
+import { MemoryEntry, MemoryEventType, ResourceMemoryEntry, EnergyMemoryEntry, TerrainMemoryEntry, SparklingEncounterMemoryEntry, InferenceMemoryEntry } from "./memoryTypes";
 import { Position } from "./sparklingTypes";
 import { TerrainType } from "@core/terrain";
 
@@ -105,6 +105,42 @@ export class Memory {
     };
     
     return this.addEntry(entry);
+  }
+  
+  /**
+   * Create and add an inference memory
+   */
+  public addInferenceMemory(position: Position, reasoning: string, parameterChanges: string, success: boolean): boolean {
+    const entry: InferenceMemoryEntry = {
+      type: MemoryEventType.INFERENCE_PERFORMED,
+      position: { ...position },
+      timestamp: this.currentTime,
+      importance: success ? 0.9 : 0.6, // Successful inferences are more important to remember
+      reasoning,
+      parameterChanges,
+      success
+    };
+    
+    return this.addEntry(entry);
+  }
+  
+  /**
+   * Get all inference memories
+   */
+  public getInferenceMemories(): InferenceMemoryEntry[] {
+    return this.getMemoriesByType(MemoryEventType.INFERENCE_PERFORMED) as InferenceMemoryEntry[];
+  }
+  
+  /**
+   * Get the most recent inference memory
+   */
+  public getLatestInferenceMemory(): InferenceMemoryEntry | null {
+    const memories = this.getInferenceMemories();
+    if (memories.length === 0) return null;
+    
+    // Sort by timestamp (descending)
+    memories.sort((a, b) => b.timestamp - a.timestamp);
+    return memories[0];
   }
   
   /**
