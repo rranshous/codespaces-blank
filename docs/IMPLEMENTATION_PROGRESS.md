@@ -145,6 +145,7 @@ This document tracks our progress in implementing the Sparklings Neural Energy S
 - Fixed state transition issue where Sparklings could get stuck in waiting state
 - Ensured proper transition to PROCESSING state after API calls complete or fail
 - Implemented more robust error handling for network errors during inference
+- Modified inference tests to use current inference mode (mock or API) instead of always forcing mock mode
 
 ### Documentation Updates
 - Updated implementation progress to mark Backend Proxy milestone as complete

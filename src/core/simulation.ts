@@ -221,11 +221,8 @@ export class Simulation {
       this.stop();
     }
     
-    // Use mock inference for tests to avoid API costs
-    const previousMode = this.useMockInference;
-    this.inferenceSystem.setUseMockInference(true);
-    
-    // Run the tests
+    // Run the tests using the current inference mode
+    console.log(`Running inference tests using ${this.useMockInference ? 'mock' : 'API'} inference mode`);
     await this.inferenceQualityTester.runAllTests();
     
     // Display the results
@@ -255,9 +252,6 @@ export class Simulation {
     document.body.appendChild(resultsElement);
     
     resultsElement.textContent = testSummary;
-    
-    // Restore previous inference mode
-    this.inferenceSystem.setUseMockInference(previousMode);
     
     // Resume simulation if it was running
     if (wasRunning) {
