@@ -47,7 +47,7 @@ export const DEFAULT_CONFIG: SimulationConfig = {
   sparklingMaxNeuralEnergy: 100,
   
   // Resource parameters
-  resourceSpawnRate: 0.003,  // Reduced from 0.01 to 0.003
+  resourceSpawnRate: 0.0003,  // Reduced from 0.01 to 0.0003
   resourceValue: 10,
   
   // Memory parameters

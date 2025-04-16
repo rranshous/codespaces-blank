@@ -1,11 +1,12 @@
 import { SimulationConfig } from "@config/config";
 import { World } from "@core/world";
-import { Position, SparklingState, SparklingStats, Velocity } from "./sparklingTypes";
+import { Position, SparklingState, SparklingStats, Velocity, InferenceStatus } from "./sparklingTypes";
 import { Memory } from "./memory";
 import { MemoryEventType } from "./memoryTypes";
 import { TerrainType } from "@core/terrain";
 import { DecisionParameters, BehavioralProfile } from "./decisionParameters";
 import { generateParametersForProfile, createRandomizedParameters } from "./decisionParameterProfiles";
+import { InferenceSystem, InferenceResult } from "@core/inference";
 
 /**
  * Class representing a Sparkling entity in the simulation
@@ -36,6 +37,15 @@ export class Sparkling {
   private lastResourceCheck: number = 0;
   private lastTerrainCheck: number = 0;
   private homePosition: Position | null = null;
+  
+  // Neural energy & inference
+  private inferenceStatus: InferenceStatus = InferenceStatus.IDLE;
+  private lastInferenceTime: number = 0;
+  private inferenceEnergyCost: number = 30; // Base cost of inference
+  private inferenceThreshold: number = 70; // Default energy threshold for triggering inference
+  private inferenceTimer: number = 0; // Timer for inference animation
+  private inferenceInterval: number = 15; // Minimum time between inferences (seconds)
+  private lastInferenceReasoning: string = '';
   
   /**
    * Create a new Sparkling
@@ -111,6 +121,9 @@ export class Sparkling {
     // Check surroundings and update memory
     this.updateMemoryFromSurroundings(world, deltaTime);
     
+    // Check if we should trigger inference
+    this.updateInferenceStatus(deltaTime);
+    
     // Make decisions based on current state and parameters
     this.updateState(world);
     
@@ -122,20 +135,119 @@ export class Sparkling {
   }
   
   /**
+   * Update the inference status and handle inference triggering
+   */
+  private async updateInferenceStatus(deltaTime: number): Promise<void> {
+    // First, update the inference timer
+    if (this.inferenceStatus !== InferenceStatus.IDLE) {
+      this.inferenceTimer += deltaTime;
+    }
+    
+    // Handle different inference states
+    switch (this.inferenceStatus) {
+      case InferenceStatus.IDLE:
+        // Check if we have enough neural energy to perform inference
+        if (this.neuralEnergy >= this.inferenceThreshold && 
+            this.totalTime - this.lastInferenceTime >= this.inferenceInterval) {
+          // Begin the inference process
+          this.inferenceStatus = InferenceStatus.PREPARING;
+          this.inferenceTimer = 0;
+        }
+        break;
+        
+      case InferenceStatus.PREPARING:
+        // Short preparation phase for visual effects
+        if (this.inferenceTimer >= 1.0) {
+          this.inferenceStatus = InferenceStatus.THINKING;
+          this.inferenceTimer = 0;
+          
+          // Consume neural energy for inference
+          this.neuralEnergy = Math.max(0, this.neuralEnergy - this.inferenceEnergyCost);
+          
+          // Perform the inference
+          this.performInference();
+        }
+        break;
+        
+      case InferenceStatus.THINKING:
+        // Inference is in progress, wait for completion
+        // In a real implementation, this would be awaiting a response from the API
+        // For now, we'll just simulate a delay
+        if (this.inferenceTimer >= 3.0) {
+          this.inferenceStatus = InferenceStatus.PROCESSING;
+          this.inferenceTimer = 0;
+        }
+        break;
+        
+      case InferenceStatus.PROCESSING:
+        // Processing phase - update is completed in performInference()
+        if (this.inferenceTimer >= 1.0) {
+          this.inferenceStatus = InferenceStatus.IDLE;
+          this.inferenceTimer = 0;
+          this.lastInferenceTime = this.totalTime;
+        }
+        break;
+    }
+  }
+  
+  /**
+   * Perform inference using the InferenceSystem
+   */
+  private async performInference(): Promise<void> {
+    // Get the inference system instance
+    const inferenceSystem = InferenceSystem.getInstance();
+    
+    // Perform the inference
+    const result = await inferenceSystem.performInference(
+      this.id,
+      this.state,
+      { food: this.food, neuralEnergy: this.neuralEnergy },
+      { maxFood: this.stats.maxFood, maxNeuralEnergy: this.stats.maxNeuralEnergy },
+      this.memory,
+      this.parameters
+    );
+    
+    // Process the result if successful
+    if (result.success) {
+      // Update parameters based on inference result
+      this.updateParameters(result.updatedParameters);
+      
+      // Store reasoning in memory
+      this.lastInferenceReasoning = result.reasoning;
+      
+      // Log the inference event for debugging
+      console.log(`Sparkling ${this.id} performed inference:`, result.reasoning);
+    }
+  }
+  
+  /**
    * Consume food and neural energy over time
    */
   private consumeResources(deltaTime: number): void {
     // Consume food at base rate
     this.food = Math.max(0, this.food - this.stats.foodConsumptionRate * deltaTime);
     
-    // Consume neural energy at base rate
-    this.neuralEnergy = Math.max(0, this.neuralEnergy - this.stats.neuralEnergyConsumptionRate * deltaTime);
+    // Consume neural energy at base rate - faster when actively thinking
+    let energyConsumptionRate = this.stats.neuralEnergyConsumptionRate;
+    
+    // Increased consumption during inference
+    if (this.inferenceStatus === InferenceStatus.THINKING) {
+      energyConsumptionRate *= 3; // Thinking is energy-intensive
+    }
+    
+    this.neuralEnergy = Math.max(0, this.neuralEnergy - energyConsumptionRate * deltaTime);
     
     // Extra food consumption during movement
     if (this.state !== SparklingState.IDLE && this.state !== SparklingState.RESTING) {
       // Movement costs extra food
       const movementCost = 0.5 * deltaTime;
       this.food = Math.max(0, this.food - movementCost);
+    }
+    
+    // Critical low food causes neural energy loss
+    if (this.food < this.stats.maxFood * this.parameters.criticalHungerThreshold) {
+      const criticalEnergyLoss = deltaTime * 2; // Lose energy faster when critically hungry
+      this.neuralEnergy = Math.max(0, this.neuralEnergy - criticalEnergyLoss);
     }
   }
   
@@ -726,21 +838,110 @@ export class Sparkling {
     const energyRatio = this.neuralEnergy / this.stats.maxNeuralEnergy;
     if (energyRatio > 0) {
       const glowSize = bodySize + 5 * energyRatio;
-      context.fillStyle = `rgba(150, 50, 200, ${0.3 * energyRatio})`;
+      
+      // Use more intense glow during inference
+      let glowOpacity = 0.3 * energyRatio;
+      let glowColor = `rgba(150, 50, 200, ${glowOpacity})`;
+      
+      // Modify the glow based on inference status
+      if (this.inferenceStatus !== InferenceStatus.IDLE) {
+        // Pulsing effect during inference
+        const pulseRate = this.inferenceStatus === InferenceStatus.THINKING ? 4 : 2;
+        const pulseIntensity = 0.5 + 0.5 * Math.sin(this.totalTime * pulseRate);
+        
+        glowOpacity = 0.4 * energyRatio * pulseIntensity;
+        glowColor = `rgba(180, 70, 220, ${glowOpacity})`;
+      }
+      
+      context.fillStyle = glowColor;
       context.beginPath();
       context.arc(this.position.x, this.position.y, glowSize, 0, Math.PI * 2);
       context.fill();
+      
+      // Draw secondary outer glow for high neural energy
+      if (energyRatio > 0.7 || this.inferenceStatus !== InferenceStatus.IDLE) {
+        const outerGlowSize = glowSize + 4;
+        const outerOpacity = this.inferenceStatus !== InferenceStatus.IDLE ? 
+                            0.2 * (0.7 + 0.3 * Math.sin(this.totalTime * 5)) :
+                            0.1 * energyRatio;
+        
+        context.fillStyle = `rgba(160, 60, 220, ${outerOpacity})`;
+        context.beginPath();
+        context.arc(this.position.x, this.position.y, outerGlowSize, 0, Math.PI * 2);
+        context.fill();
+      }
+      
+      // Draw neural energy level indicator
+      if (debug) {
+        // Draw neural energy level bar
+        const barWidth = 24;
+        const barHeight = 3;
+        const barX = this.position.x - barWidth / 2;
+        const barY = this.position.y - bodySize - 15;
+        
+        // Background
+        context.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        context.fillRect(barX, barY, barWidth, barHeight);
+        
+        // Energy level
+        context.fillStyle = `rgba(150, 50, 200, 0.8)`;
+        context.fillRect(barX, barY, barWidth * energyRatio, barHeight);
+        
+        // Inference threshold marker
+        const thresholdX = barX + (this.inferenceThreshold / this.stats.maxNeuralEnergy) * barWidth;
+        context.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+        context.beginPath();
+        context.moveTo(thresholdX, barY - 1);
+        context.lineTo(thresholdX, barY + barHeight + 1);
+        context.stroke();
+      }
     }
     
-    // Draw indicator of current state
-    context.fillStyle = 'white';
-    context.font = '8px Arial';
-    context.textAlign = 'center';
-    context.fillText(
-      this.getStateLabel(), 
-      this.position.x, 
-      this.position.y - bodySize - 5
-    );
+    // Draw inference status indicator if actively inferring
+    if (this.inferenceStatus !== InferenceStatus.IDLE) {
+      // Draw thinking animation
+      const statusText = this.getInferenceStatusText();
+      const dotsCount = Math.floor((this.inferenceTimer * 2) % 4);
+      const dots = '.'.repeat(dotsCount);
+      
+      context.fillStyle = 'rgba(255, 255, 255, 0.9)';
+      context.font = '8px Arial';
+      context.textAlign = 'center';
+      context.fillText(
+        `${statusText}${dots}`, 
+        this.position.x, 
+        this.position.y - bodySize - 10
+      );
+      
+      // Draw last inference reasoning if available and in debug mode
+      if (debug && this.lastInferenceReasoning && this.inferenceStatus === InferenceStatus.PROCESSING) {
+        const maxReasoningLength = 60;
+        const shortenedReasoning = this.lastInferenceReasoning.length > maxReasoningLength 
+          ? this.lastInferenceReasoning.substring(0, maxReasoningLength) + '...'
+          : this.lastInferenceReasoning;
+        
+        context.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        context.font = '7px Arial';
+        const lines = this.wrapText(shortenedReasoning, 120);
+        lines.forEach((line, index) => {
+          context.fillText(
+            line,
+            this.position.x,
+            this.position.y + bodySize + 15 + (index * 8)
+          );
+        });
+      }
+    } else {
+      // Draw regular state label when not inferring
+      context.fillStyle = 'white';
+      context.font = '8px Arial';
+      context.textAlign = 'center';
+      context.fillText(
+        this.getStateLabel(), 
+        this.position.x, 
+        this.position.y - bodySize - 5
+      );
+    }
     
     // Draw the target position if we have one and debug is enabled
     if (debug && this.targetPosition) {
@@ -772,6 +973,46 @@ export class Sparkling {
       // Draw parameter visualization
       this.renderParameterIndicators(context);
     }
+  }
+  
+  /**
+   * Get text description for the current inference status
+   */
+  private getInferenceStatusText(): string {
+    switch (this.inferenceStatus) {
+      case InferenceStatus.PREPARING: return "preparing";
+      case InferenceStatus.THINKING: return "thinking";
+      case InferenceStatus.PROCESSING: return "processing";
+      default: return "";
+    }
+  }
+  
+  /**
+   * Wrap text to multiple lines for rendering
+   */
+  private wrapText(text: string, maxWidth: number): string[] {
+    const words = text.split(' ');
+    const lines: string[] = [];
+    let currentLine = '';
+    
+    for (const word of words) {
+      const testLine = currentLine ? currentLine + ' ' + word : word;
+      // Simple width estimate
+      const testWidth = testLine.length * 4; // Approximate width per character
+      
+      if (testWidth > maxWidth && currentLine !== '') {
+        lines.push(currentLine);
+        currentLine = word;
+      } else {
+        currentLine = testLine;
+      }
+    }
+    
+    if (currentLine) {
+      lines.push(currentLine);
+    }
+    
+    return lines.slice(0, 3); // Limit to 3 lines
   }
   
   /**

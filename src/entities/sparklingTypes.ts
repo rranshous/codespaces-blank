@@ -11,6 +11,16 @@ export enum SparklingState {
 }
 
 /**
+ * Enum representing different inference states
+ */
+export enum InferenceStatus {
+  IDLE = 'idle',           // Not performing inference
+  PREPARING = 'preparing', // Preparing to do inference (animation)
+  THINKING = 'thinking',   // Currently performing inference
+  PROCESSING = 'processing' // Processing inference results
+}
+
+/**
  * Interface for position in 2D space
  */
 export interface Position {
