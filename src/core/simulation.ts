@@ -142,6 +142,28 @@ export class Simulation {
   }
   
   /**
+   * Toggle between using the API proxy or direct calls
+   */
+  public toggleProxyMode(): void {
+    const newProxyMode = !this.apiConfig.useProxy;
+    this.apiConfig.useProxy = newProxyMode;
+    this.inferenceSystem.updateApiConfig(this.apiConfig);
+    
+    // Update button text
+    const proxyToggleButton = document.getElementById('toggle-proxy');
+    if (proxyToggleButton) {
+      proxyToggleButton.textContent = newProxyMode ? 'Using Proxy Server' : 'Using Direct API Calls';
+    }
+    
+    console.log(`API mode set to: ${newProxyMode ? 'Proxy Server' : 'Direct API Calls'}`);
+    
+    // Inform the user if proxy mode is enabled but mock inference is also enabled
+    if (newProxyMode && this.useMockInference) {
+      console.warn("Note: Proxy mode is enabled, but mock inference is also enabled. The proxy will only be used when mock inference is disabled.");
+    }
+  }
+  
+  /**
    * Update Anthropic API configuration
    */
   public updateApiConfig(apiConfig: Partial<AnthropicConfig>): void {
@@ -378,6 +400,12 @@ export class Simulation {
     inferenceToggleButton.textContent = this.useMockInference ? 'Using Mock Inference' : 'Using API Inference';
     inferenceToggleButton.addEventListener('click', () => this.toggleInferenceMode());
     
+    // Add proxy toggle button
+    const proxyToggleButton = document.createElement('button');
+    proxyToggleButton.id = 'toggle-proxy';
+    proxyToggleButton.textContent = this.apiConfig.useProxy ? 'Using Proxy Server' : 'Using Direct API Calls';
+    proxyToggleButton.addEventListener('click', () => this.toggleProxyMode());
+    
     // Add inference test button
     const runTestsButton = document.createElement('button');
     runTestsButton.id = 'run-inference-tests';
@@ -388,6 +416,7 @@ export class Simulation {
     if (controlsDiv) {
       controlsDiv.appendChild(debugButton);
       controlsDiv.appendChild(inferenceToggleButton);
+      controlsDiv.appendChild(proxyToggleButton);
       controlsDiv.appendChild(runTestsButton);
     }
   }

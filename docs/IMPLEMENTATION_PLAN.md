@@ -52,6 +52,14 @@ This document outlines a phased approach to implementing the Sparklings Neural E
 - Add reasoning storage and utilization
 - Create testing framework for inference quality
 
+### Milestone 2.4: Backend Proxy for Real Inference (1 week)
+- Implement lightweight backend proxy server for Anthropic API
+- Modify frontend API client to use proxy endpoint instead of direct calls
+- Add configuration management for proxy URL
+- Implement error handling and fallback to mock inference
+- Test real inference with proxy server
+- Add authentication and rate limiting to proxy service
+
 ## Phase 3: Competition & Interaction (3 weeks)
 
 ### Milestone 3.1: Basic Interactions (1 week)

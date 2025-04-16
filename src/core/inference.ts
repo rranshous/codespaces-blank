@@ -2,7 +2,7 @@ import { SparklingState } from '@entities/sparklingTypes';
 import { DecisionParameters } from '@entities/decisionParameters';
 import { Memory } from '@entities/memory';
 import { MemoryEventType, InferenceMemoryEntry } from '@entities/memoryTypes';
-import { getAnthropicConfig, isApiConfigValid, AnthropicConfig } from '@config/apiConfig';
+import { getAnthropicConfig, isApiConfigValid, AnthropicConfig, getActiveEndpoint } from '@config/apiConfig';
 
 /**
  * Interface to define the result of an inference
@@ -329,14 +329,25 @@ Return your response in this JSON format:
       // Record the start time for response time measurement
       const startTime = performance.now();
       
+      // Determine which endpoint to use (proxy or direct)
+      const endpoint = getActiveEndpoint(this.apiConfig);
+      
+      // Prepare headers based on whether we're using the proxy or direct API
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      };
+      
+      // When making direct API calls, include the API key
+      // When using proxy, the key is stored server-side
+      if (!this.apiConfig.useProxy) {
+        headers['x-api-key'] = this.apiConfig.apiKey;
+        headers['anthropic-version'] = '2023-06-01';
+      }
+      
       // Make the API request
-      const response = await fetch(this.apiConfig.apiEndpoint, {
+      const response = await fetch(endpoint, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': this.apiConfig.apiKey,
-          'anthropic-version': '2023-06-01'
-        },
+        headers,
         body: JSON.stringify({
           model: this.apiConfig.model,
           max_tokens: this.apiConfig.maxTokens,
@@ -353,11 +364,11 @@ Return your response in this JSON format:
       // Process the response
       if (!response.ok) {
         const errorText = await response.text();
-        console.error("Anthropic API error:", errorText);
+        console.error(`API error (${this.apiConfig.useProxy ? 'proxy' : 'direct'}):`, errorText);
         this.inferenceQualityMetrics.failedInferences++;
         return {
           updatedParameters: {},
-          reasoning: "Failed to perform inference due to an API error.",
+          reasoning: `Failed to perform inference due to an API error. Using ${this.apiConfig.useProxy ? 'proxy endpoint' : 'direct API calls'}.`,
           parameterChangeSummary: "API error",
           success: false
         };
@@ -395,7 +406,7 @@ Return your response in this JSON format:
           success: true
         };
       } catch (error) {
-        console.error("Error parsing Anthropic API response:", error);
+        console.error("Error parsing API response:", error);
         this.inferenceQualityMetrics.failedInferences++;
         return {
           updatedParameters: {},
@@ -405,11 +416,11 @@ Return your response in this JSON format:
         };
       }
     } catch (error) {
-      console.error("Error calling Anthropic API:", error);
+      console.error(`Error calling ${this.apiConfig.useProxy ? 'proxy' : 'Anthropic API'}:`, error);
       this.inferenceQualityMetrics.failedInferences++;
       return {
         updatedParameters: {},
-        reasoning: "Failed to perform inference due to a network or server error.",
+        reasoning: `Failed to perform inference due to a network or server error. Using ${this.apiConfig.useProxy ? 'proxy endpoint' : 'direct API calls'}.`,
         parameterChangeSummary: "Network error",
         success: false
       };

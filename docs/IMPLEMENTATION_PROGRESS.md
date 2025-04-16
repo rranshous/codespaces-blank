@@ -50,6 +50,14 @@ This document tracks our progress in implementing the Sparklings Neural Energy S
 - [x] Add reasoning storage and utilization
 - [x] Create testing framework for inference quality
 
+### Milestone 2.4: Backend Proxy for Real Inference ⬜ (In Progress)
+- [x] Implement lightweight backend proxy server for Anthropic API
+- [x] Modify frontend API client to use proxy endpoint instead of direct calls
+- [x] Add configuration management for proxy URL
+- [x] Implement error handling and fallback to mock inference
+- [ ] Test real inference with proxy server
+- [ ] Add authentication and rate limiting to proxy service
+
 ## Phase 3: Competition & Interaction
 
 ### Milestone 3.1: Basic Interactions ⬜
@@ -127,3 +135,12 @@ This document tracks our progress in implementing the Sparklings Neural Energy S
 - Implemented API toggle to allow switching between mock and real API inference
 - Added inference quality metrics tracking and visualization
 - Enhanced memory visualization to display inference events
+
+### Backend Proxy Implementation
+- Created Express-based proxy server for Anthropic API requests
+- Implemented API configuration toggle between proxy and direct calls
+- Added environment variable support for API keys
+- Added CORS handling and error management
+- Implemented rate limiting to prevent API abuse
+- Updated frontend to use proxy for real inference
+- Created documentation for proxy setup and usage
