@@ -1,6 +1,7 @@
 import { SimulationConfig, getConfig } from '@config/config';
 import { Renderer } from '@rendering/renderer';
 import { TimeManager } from '@utils/time';
+import { World, WorldGenerationOptions } from '@core/world';
 
 /**
  * Main simulation class that manages the entire simulation
@@ -9,6 +10,7 @@ export class Simulation {
   private config: SimulationConfig;
   private renderer: Renderer;
   private timeManager: TimeManager;
+  private world: World;
   private isRunning: boolean = false;
   private animationFrameId: number | null = null;
 
@@ -16,14 +18,18 @@ export class Simulation {
     this.config = getConfig(config);
     this.renderer = new Renderer(canvas, this.config);
     this.timeManager = new TimeManager();
+    this.world = new World(this.config);
   }
 
   /**
    * Initialize the simulation
    */
-  public initialize(): void {
+  public initialize(worldOptions: WorldGenerationOptions = {}): void {
     this.setupEventListeners();
-    this.reset();
+    this.world.initialize(worldOptions);
+    
+    // Perform an initial render
+    this.render();
   }
 
   /**
@@ -63,10 +69,11 @@ export class Simulation {
   /**
    * Reset the simulation to its initial state
    */
-  public reset(): void {
+  public reset(worldOptions: WorldGenerationOptions = {}): void {
     this.stop();
     this.timeManager.reset();
-    // Will add more reset logic as we implement more systems
+    this.world.initialize(worldOptions);
+    this.render(); // Render the new world state
   }
 
   /**
@@ -87,6 +94,9 @@ export class Simulation {
    * Update the simulation state
    */
   private update(deltaTime: number): void {
+    // Spawn new resources in the world
+    this.world.spawnResources(deltaTime);
+    
     // Will add update logic for entities as we implement them
   }
 
@@ -95,11 +105,13 @@ export class Simulation {
    */
   private render(): void {
     this.renderer.clear();
-    this.renderer.drawGrid();
+    
+    // Draw the world (terrain and resources)
+    this.renderer.drawWorld(this.world);
     
     // Will add more rendering as we implement entities
     
-    this.renderer.drawDebugInfo(this.timeManager.getFPS());
+    this.renderer.drawDebugInfo(this.timeManager.getFPS(), this.world);
   }
 
   /**
@@ -122,5 +134,12 @@ export class Simulation {
    */
   public getConfig(): SimulationConfig {
     return this.config;
+  }
+  
+  /**
+   * Get the world
+   */
+  public getWorld(): World {
+    return this.world;
   }
 }
