@@ -289,6 +289,9 @@ export class Simulation {
    * Update the simulation state
    */
   private update(deltaTime: number): void {
+    // Update the simulation time
+    this.world.updateTime(deltaTime);
+    
     // Spawn new resources in the world
     this.world.spawnResources(deltaTime);
     
@@ -345,14 +348,15 @@ export class Simulation {
       sparkling.render(this.renderer.getContext(), this.showDebug);
     }
     
-    this.renderer.drawDebugInfo(this.timeManager.getFPS(), this.world);
+    // Pass the inference system to the renderer for debug info
+    this.renderer.drawDebugInfo(this.timeManager.getFPS(), this.world, this.inferenceSystem);
     
     // Draw additional debug information if enabled
     if (this.showDebug) {
       this.drawMemoryStats();
     }
   }
-  
+
   /**
    * Draw memory statistics for debugging
    */
@@ -422,7 +426,7 @@ export class Simulation {
     // Add debug toggle button
     const debugButton = document.createElement('button');
     debugButton.id = 'toggle-debug';
-    debugButton.textContent = 'Toggle Memory View';
+    debugButton.textContent = 'Toggle Visualization Details';
     debugButton.addEventListener('click', () => this.toggleDebug());
     
     // Add inference API toggle button

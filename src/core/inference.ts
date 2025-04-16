@@ -88,6 +88,34 @@ export class InferenceSystem {
   }
   
   /**
+   * Get whether mock inference is being used
+   */
+  public getUseMockInference(): boolean {
+    return this.useMockInference;
+  }
+  
+  /**
+   * Get the current API configuration
+   */
+  public getApiConfig(): AnthropicConfig {
+    return { ...this.apiConfig };
+  }
+  
+  /**
+   * Check if the API configuration is valid
+   */
+  public isApiConfigValid(): boolean {
+    return isApiConfigValid(this.apiConfig);
+  }
+  
+  /**
+   * Get a list of recent inferences
+   */
+  public getRecentInferences(count: number = 10): Array<{sparklingId: number, timestamp: number, success: boolean}> {
+    return this.recentInferences.slice(-count).reverse();
+  }
+  
+  /**
    * Update API configuration
    */
   public updateApiConfig(config: Partial<AnthropicConfig>): void {

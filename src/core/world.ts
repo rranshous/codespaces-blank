@@ -34,6 +34,7 @@ export class World {
   private gridWidth: number;
   private gridHeight: number;
   private random: () => number;
+  private simulationTime: number = 0;
 
   constructor(config: SimulationConfig) {
     this.config = config;
@@ -55,6 +56,23 @@ export class World {
 
     this.generateTerrain(finalOptions);
     this.initializeResources();
+    this.simulationTime = 0;
+  }
+  
+  /**
+   * Update the simulation time
+   * @param deltaTime Time elapsed since last update in seconds
+   */
+  public updateTime(deltaTime: number): void {
+    this.simulationTime += deltaTime;
+  }
+  
+  /**
+   * Get the current simulation time in seconds
+   * @returns Current simulation time in seconds
+   */
+  public getCurrentTime(): number {
+    return this.simulationTime;
   }
 
   /**

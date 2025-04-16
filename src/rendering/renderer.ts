@@ -173,7 +173,7 @@ export class Renderer {
   /**
    * Draw debug information on the canvas
    */
-  public drawDebugInfo(fps: number, world?: World): void {
+  public drawDebugInfo(fps: number, world?: World, inferenceSystem?: any): void {
     this.context.fillStyle = 'white';
     this.context.font = '12px Arial';
     this.context.textAlign = 'right';
@@ -190,10 +190,153 @@ export class Renderer {
     if (world) {
       const dimensions = world.getDimensions();
       this.context.fillText(`World: ${dimensions.width}x${dimensions.height}`, rightEdge, y);
+      y += 20;
+      
+      // Show current time - check if the method exists first
+      const simulationTime = world.getCurrentTime ? world.getCurrentTime() : 0;
+      const minutes = Math.floor(simulationTime / 60);
+      const seconds = Math.floor(simulationTime % 60);
+      this.context.fillText(`Simulation time: ${minutes}m ${seconds}s`, rightEdge, y);
+      y += 20;
+    }
+    
+    // Add inference system information if available
+    if (inferenceSystem) {
+      // Add a section header for inference information
+      this.context.fillStyle = 'rgba(156, 39, 176, 0.9)'; // Purple for inference section
+      this.context.fillText('— Inference System —', rightEdge, y);
+      y += 20;
+      
+      this.context.fillStyle = 'white';
+      // Show whether using mock or real inference
+      const inferenceMode = inferenceSystem.getUseMockInference() ? 'Mock Inference' : 'API Inference';
+      this.context.fillText(`Mode: ${inferenceMode}`, rightEdge, y);
+      y += 20;
+      
+      // Show API configuration info if using real inference
+      if (!inferenceSystem.getUseMockInference()) {
+        const apiConfig = inferenceSystem.getApiConfig();
+        const endpoint = apiConfig.useProxy ? 'Proxy Server' : 'Direct API';
+        this.context.fillText(`Endpoint: ${endpoint}`, rightEdge, y);
+        y += 20;
+        
+        const apiValid = inferenceSystem.isApiConfigValid() ? 'Valid' : 'Invalid';
+        this.context.fillText(`API Config: ${apiValid}`, rightEdge, y);
+        y += 20;
+      }
+      
+      // Display inference metrics with color coding
+      const metrics = inferenceSystem.getInferenceQualityMetrics();
+      this.context.fillStyle = 'rgba(156, 39, 176, 0.9)';
+      this.context.fillText('— Inference Metrics —', rightEdge, y);
+      y += 20;
+      
+      this.context.fillStyle = 'white';
+      this.context.fillText(`Total requests: ${metrics.totalInferences}`, rightEdge, y);
+      y += 20;
+      
+      // Color-code successful inferences in green
+      this.context.fillStyle = 'rgba(76, 175, 80, 0.9)';
+      this.context.fillText(`Successful: ${metrics.successfulInferences}`, rightEdge, y);
+      y += 20;
+      
+      // Color-code failed inferences in red
+      this.context.fillStyle = 'rgba(244, 67, 54, 0.9)';
+      this.context.fillText(`Failed: ${metrics.failedInferences}`, rightEdge, y);
+      y += 20;
+      
+      // Success rate with appropriate coloring
+      const successRate = metrics.totalInferences > 0 
+        ? ((metrics.successfulInferences / metrics.totalInferences) * 100).toFixed(1) + '%'
+        : 'N/A';
+        
+      // Choose color based on success rate
+      if (metrics.totalInferences > 0) {
+        const rate = metrics.successfulInferences / metrics.totalInferences;
+        if (rate > 0.8) this.context.fillStyle = 'rgba(76, 175, 80, 0.9)'; // Green for good
+        else if (rate > 0.5) this.context.fillStyle = 'rgba(255, 152, 0, 0.9)'; // Orange for medium
+        else this.context.fillStyle = 'rgba(244, 67, 54, 0.9)'; // Red for poor
+      } else {
+        this.context.fillStyle = 'white';
+      }
+      
+      this.context.fillText(`Success rate: ${successRate}`, rightEdge, y);
+      y += 20;
+      
+      // Reset color for response time
+      this.context.fillStyle = 'white';
+      this.context.fillText(`Avg response time: ${metrics.averageResponseTime.toFixed(1)}ms`, rightEdge, y);
+      y += 20;
+      
+      // Show recent inferences with detailed information
+      const recentInferences = inferenceSystem.getRecentInferences ? 
+        inferenceSystem.getRecentInferences(5) : [];
+      
+      if (recentInferences && recentInferences.length > 0) {
+        this.context.fillStyle = 'rgba(156, 39, 176, 0.9)';
+        this.context.fillText('— Recent Inferences —', rightEdge, y);
+        y += 20;
+        
+        for (const inf of recentInferences) {
+          const timestamp = new Date(inf.timestamp).toLocaleTimeString();
+          const status = inf.success ? '✓' : '✗';
+          
+          // Color code based on success/failure
+          if (inf.success) {
+            this.context.fillStyle = 'rgba(76, 175, 80, 0.9)'; // Green for success
+          } else {
+            this.context.fillStyle = 'rgba(244, 67, 54, 0.9)'; // Red for failure
+          }
+          
+          this.context.fillText(
+            `${status} Sparkling ${inf.sparklingId} (${timestamp})`, 
+            rightEdge, 
+            y
+          );
+          y += 15;
+          
+          // Show a snippet of the reasoning in a smaller font if available
+          if (inf.reasoning && inf.reasoning.length > 0) {
+            this.context.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            this.context.font = '10px Arial';
+            
+            // Truncate reasoning to fit
+            const maxLength = 40;
+            const shortReason = inf.reasoning.length > maxLength 
+              ? inf.reasoning.substring(0, maxLength) + '...' 
+              : inf.reasoning;
+              
+            this.context.fillText(`"${shortReason}"`, rightEdge, y);
+            y += 15;
+            
+            // Reset font size
+            this.context.font = '12px Arial';
+          }
+        }
+      }
+      
+      // Add legend for the home point visualization
+      this.context.fillStyle = 'rgba(255, 255, 255, 0.9)';
+      y += 10; // Add a bit more space before the next section
+      this.context.fillText('— Legend —', rightEdge, y);
+      y += 20;
+      
+      this.context.fillStyle = 'rgba(255, 255, 100, 0.9)';
+      this.context.fillText('● "Home" reference points', rightEdge, y);
+      y += 20;
+      
+      this.context.fillStyle = 'rgba(76, 175, 80, 0.7)';
+      this.context.fillText('● Memory event markers', rightEdge, y);
+      y += 20;
+      
+      this.context.fillStyle = 'rgba(33, 150, 243, 0.7)';
+      this.context.fillText('● Inference locations', rightEdge, y);
+      y += 20;
     }
     
     // Reset text alignment for other text
     this.context.textAlign = 'left';
+    this.context.fillStyle = 'white';
   }
 
   /**

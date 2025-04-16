@@ -164,16 +164,17 @@ export class Sparkling {
           // Consume neural energy for inference
           this.neuralEnergy = Math.max(0, this.neuralEnergy - this.inferenceEnergyCost);
           
-          // Perform the inference
+          // Perform the inference - this actually calls the API if not using mock mode
           this.performInference();
         }
         break;
         
       case InferenceStatus.THINKING:
-        // Inference is in progress, wait for completion
-        // In a real implementation, this would be awaiting a response from the API
-        // For now, we'll just simulate a delay
-        if (this.inferenceTimer >= 3.0) {
+        // The thinking state is now managed by the async performInference method
+        // We'll transition to PROCESSING when the API call completes
+        // Only add a timeout fallback in case the API call hangs
+        if (this.inferenceTimer >= 15.0) {  // 15 seconds timeout
+          console.warn(`Inference for Sparkling ${this.id} timed out after 15 seconds.`);
           this.inferenceStatus = InferenceStatus.PROCESSING;
           this.inferenceTimer = 0;
         }
@@ -197,37 +198,52 @@ export class Sparkling {
     // Get the inference system instance
     const inferenceSystem = InferenceSystem.getInstance();
     
-    // Perform the inference
-    const result = await inferenceSystem.performInference(
-      this.id,
-      this.state,
-      { food: this.food, neuralEnergy: this.neuralEnergy },
-      { maxFood: this.stats.maxFood, maxNeuralEnergy: this.stats.maxNeuralEnergy },
-      this.memory,
-      this.parameters
-    );
-    
-    // Process the result if successful
-    if (result.success) {
-      // Update parameters based on inference result
-      this.updateParameters(result.updatedParameters);
+    try {
+      // Log the start of inference for debugging
+      console.log(`Sparkling ${this.id} starting inference process...`);
       
-      // Store reasoning in memory
-      this.memory.addInferenceMemory(
-        { ...this.position },
-        result.reasoning,
-        result.parameterChangeSummary,
-        result.success
+      // Perform the inference
+      const result = await inferenceSystem.performInference(
+        this.id,
+        this.state,
+        { food: this.food, neuralEnergy: this.neuralEnergy },
+        { maxFood: this.stats.maxFood, maxNeuralEnergy: this.stats.maxNeuralEnergy },
+        this.memory,
+        this.parameters
       );
       
-      // Store the reasoning for use in rendering
-      this.lastInferenceReasoning = result.reasoning;
-      
-      // Log the inference event for debugging
-      console.log(`Sparkling ${this.id} performed inference:`, result.reasoning);
-    } else {
-      // Log the failure
-      console.warn(`Sparkling ${this.id} inference failed:`, result.reasoning);
+      // Process the result if successful
+      if (result.success) {
+        // Update parameters based on inference result
+        this.updateParameters(result.updatedParameters);
+        
+        // Store reasoning in memory
+        this.memory.addInferenceMemory(
+          { ...this.position },
+          result.reasoning,
+          result.parameterChangeSummary,
+          result.success
+        );
+        
+        // Store the reasoning for use in rendering
+        this.lastInferenceReasoning = result.reasoning;
+        
+        // Log the inference event for debugging
+        console.log(`Sparkling ${this.id} performed inference successfully:`, result.reasoning);
+      } else {
+        // Log the failure
+        console.warn(`Sparkling ${this.id} inference failed:`, result.reasoning);
+        this.lastInferenceReasoning = `Inference failed: ${result.reasoning}`;
+      }
+    } catch (error: unknown) {
+      console.error(`Sparkling ${this.id} inference error:`, error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.lastInferenceReasoning = `Inference error: ${errorMessage}`;
+    } finally {
+      // Always transition to PROCESSING state after API call completes (or fails)
+      // This ensures we move to the next state regardless of API success/failure
+      this.inferenceStatus = InferenceStatus.PROCESSING;
+      this.inferenceTimer = 0;
     }
   }
   
