@@ -40,14 +40,14 @@ export const DEFAULT_CONFIG: SimulationConfig = {
   renderScale: 1,
   
   // Sparkling parameters
-  initialSparklingCount: 5,
+  initialSparklingCount: 12,  // Increased from 5 to 12
   sparklingSize: 10,
   sparklingSpeed: 2,
   sparklingMaxFood: 100,
   sparklingMaxNeuralEnergy: 100,
   
   // Resource parameters
-  resourceSpawnRate: 0.01, // probability per frame
+  resourceSpawnRate: 0.003,  // Reduced from 0.01 to 0.003
   resourceValue: 10,
   
   // Memory parameters

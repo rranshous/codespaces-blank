@@ -184,12 +184,12 @@ export class World {
         const terrainProps = TERRAIN_PROPERTIES[cell.terrain];
         
         // Base resource amount is influenced by terrain type and some randomness
-        if (this.random() < 0.3 * terrainProps.resourceMultiplier) {
+        if (this.random() < 0.15 * terrainProps.resourceMultiplier) {  // Reduced from 0.3 to 0.15
           cell.resources = Math.ceil(this.random() * 10 * terrainProps.resourceMultiplier);
         }
         
         // Base neural energy amount is influenced by terrain type and some randomness
-        if (this.random() < 0.2 * terrainProps.neuralEnergyMultiplier) {
+        if (this.random() < 0.1 * terrainProps.neuralEnergyMultiplier) {  // Reduced from 0.2 to 0.1
           cell.neuralEnergy = Math.ceil(this.random() * 5 * terrainProps.neuralEnergyMultiplier);
         }
       }
