@@ -64,6 +64,9 @@ export class Renderer {
         this.drawResourcesInCell(cell, cellSize);
       }
     }
+    
+    // Draw the terrain legend below the map
+    this.drawMapLegend(world.getDimensions(), cellSize);
   }
   
   /**
@@ -140,6 +143,101 @@ export class Renderer {
       );
       this.context.fill();
     }
+  }
+
+  /**
+   * Draw a legend explaining map elements below the world grid
+   */
+  private drawMapLegend(dimensions: { width: number, height: number }, cellSize: number): void {
+    // Position the legend below the map with some padding
+    const legendY = dimensions.height * cellSize + 20;
+    const legendWidth = dimensions.width * cellSize;
+    const legendHeight = 70; // Total height for the legend area
+    
+    // Create semi-transparent background for the legend
+    this.context.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    this.context.fillRect(0, legendY - 10, legendWidth, legendHeight);
+    
+    // Set up text styling
+    this.context.font = '14px Arial';
+    this.context.textAlign = 'left';
+    this.context.textBaseline = 'middle';
+    this.context.fillStyle = 'white';
+    
+    // Draw legend title
+    this.context.fillText('Map Legend:', 20, legendY);
+    
+    // Draw terrain types in the first row
+    let xOffset = 20;
+    let rowY = legendY + 25;
+    
+    // Terrain section title
+    this.context.fillStyle = 'rgba(200, 200, 200, 0.9)';
+    this.context.fillText('Terrain Types:', xOffset, rowY);
+    xOffset += 120;
+    
+    // Draw each terrain type with its color and name
+    Object.entries(TERRAIN_PROPERTIES).forEach(([terrainKey, props]) => {
+      // Draw terrain color swatch
+      this.context.fillStyle = props.color;
+      this.context.fillRect(xOffset, rowY - 7, 14, 14);
+      
+      // Draw terrain name
+      this.context.fillStyle = 'white';
+      // Capitalize first letter and remove underscore
+      const displayName = terrainKey.charAt(0).toUpperCase() + terrainKey.slice(1).toLowerCase();
+      this.context.fillText(displayName, xOffset + 20, rowY);
+      
+      // Move to next position
+      xOffset += 100;
+    });
+    
+    // Draw resources and special elements in the second row
+    xOffset = 20;
+    rowY = legendY + 50;
+    
+    // Resources section title
+    this.context.fillStyle = 'rgba(200, 200, 200, 0.9)';
+    this.context.fillText('Resources:', xOffset, rowY);
+    xOffset += 120;
+    
+    // Food resources (gold circles)
+    this.context.fillStyle = '#FFD700'; // Gold
+    this.context.beginPath();
+    this.context.arc(xOffset + 7, rowY, 7, 0, Math.PI * 2);
+    this.context.fill();
+    
+    this.context.fillStyle = 'white';
+    this.context.fillText('Food', xOffset + 20, rowY);
+    xOffset += 100;
+    
+    // Neural energy (purple circles)
+    this.context.fillStyle = '#9C27B0'; // Purple
+    this.context.beginPath();
+    this.context.arc(xOffset + 7, rowY, 7, 0, Math.PI * 2);
+    this.context.fill();
+    
+    this.context.fillStyle = 'white';
+    this.context.fillText('Neural Energy', xOffset + 20, rowY);
+    xOffset += 150;
+    
+    // Sparklings (if drawn in the simulation)
+    this.context.fillStyle = 'rgba(255, 255, 255, 0.9)';
+    this.context.beginPath();
+    this.context.arc(xOffset + 7, rowY, 5, 0, Math.PI * 2);
+    this.context.fill();
+    this.context.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+    this.context.lineWidth = 1;
+    this.context.beginPath();
+    this.context.arc(xOffset + 7, rowY, 8, 0, Math.PI * 2);
+    this.context.stroke();
+    
+    this.context.fillStyle = 'white';
+    this.context.fillText('Sparklings', xOffset + 20, rowY);
+    
+    // Reset styles
+    this.context.textAlign = 'left';
+    this.context.textBaseline = 'alphabetic';
   }
 
   /**
