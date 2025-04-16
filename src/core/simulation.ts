@@ -199,20 +199,29 @@ export class Simulation {
     const context = this.renderer.getContext();
     context.fillStyle = 'white';
     context.font = '12px Arial';
+    context.textAlign = 'right';
     
-    let y = 60;
-    context.fillText('Memory Stats:', 10, y);
-    y += 15;
+    // Position on right side
+    const rightEdge = this.renderer.getContext().canvas.width - 10;
+    
+    // Start below the world dimensions info
+    let y = 120;
+    
+    context.fillText('Memory Stats:', rightEdge, y);
+    y += 20;
     
     for (const sparkling of this.sparklings) {
       const memory = sparkling.getMemory();
       context.fillText(
         `Sparkling ${sparkling.getId()}: ${memory.getCount()}/${memory.getCapacity()} memories`,
-        10, 
+        rightEdge, 
         y
       );
-      y += 15;
+      y += 20;
     }
+    
+    // Reset text alignment for other rendering
+    context.textAlign = 'left';
   }
 
   /**

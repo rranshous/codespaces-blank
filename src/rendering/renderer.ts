@@ -176,12 +176,24 @@ export class Renderer {
   public drawDebugInfo(fps: number, world?: World): void {
     this.context.fillStyle = 'white';
     this.context.font = '12px Arial';
-    this.context.fillText(`FPS: ${Math.round(fps)}`, 10, 20);
+    this.context.textAlign = 'right';
+    
+    // Position the debug info on the right side
+    const rightEdge = this.canvas.width - 10;
+    
+    // Start drawing from top right under the control panel (about 60px from top)
+    let y = 80;
+    
+    this.context.fillText(`FPS: ${Math.round(fps)}`, rightEdge, y);
+    y += 20;
     
     if (world) {
       const dimensions = world.getDimensions();
-      this.context.fillText(`World: ${dimensions.width}x${dimensions.height}`, 10, 40);
+      this.context.fillText(`World: ${dimensions.width}x${dimensions.height}`, rightEdge, y);
     }
+    
+    // Reset text alignment for other text
+    this.context.textAlign = 'left';
   }
 
   /**
