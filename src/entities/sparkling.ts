@@ -254,15 +254,12 @@ export class Sparkling {
     // Consume food at base rate
     this.food = Math.max(0, this.food - this.stats.foodConsumptionRate * deltaTime);
     
-    // Consume neural energy at base rate - faster when actively thinking
-    let energyConsumptionRate = this.stats.neuralEnergyConsumptionRate;
-    
-    // Increased consumption during inference
+    // Only consume neural energy during inference (thinking)
     if (this.inferenceStatus === InferenceStatus.THINKING) {
-      energyConsumptionRate *= 3; // Thinking is energy-intensive
+      // Increased consumption during inference - thinking is energy-intensive
+      const energyConsumptionRate = this.stats.neuralEnergyConsumptionRate * 3;
+      this.neuralEnergy = Math.max(0, this.neuralEnergy - energyConsumptionRate * deltaTime);
     }
-    
-    this.neuralEnergy = Math.max(0, this.neuralEnergy - energyConsumptionRate * deltaTime);
     
     // Extra food consumption during movement
     if (this.state !== SparklingState.IDLE && this.state !== SparklingState.RESTING) {

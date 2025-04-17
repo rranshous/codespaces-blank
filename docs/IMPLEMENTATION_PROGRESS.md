@@ -127,6 +127,14 @@ This document tracks our progress in implementing the Sparklings Neural Energy S
 
 ## Recent Updates (April 17, 2025)
 
+### Neural Energy Consumption Modification
+- Modified neural energy consumption to only occur during the "thinking" phase of inference
+- Removed continuous passive neural energy decay when Sparklings are in non-inference states
+- Maintained the energy cost during starvation (critical hunger still causes neural energy loss)
+- Preserved the one-time neural energy cost (30 units) when starting inference
+- Energy is now a permanent resource that only depletes during active "thinking" or starvation
+- This change allows Sparklings to collect and store neural energy for longer periods
+
 ### Inference System Bug Fixes and Improvements
 - Fixed Anthropic API response handling to correctly extract text content from structured response
 - Improved JSON parsing with robust sanitization to handle control characters in responses
