@@ -429,50 +429,103 @@ IMPORTANT: All parameter names must use camelCase (e.g., "resourcePreference", n
         
         const content = textContent.text;
         
-        // Try to extract the JSON part from the response
-        const jsonMatch = content.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) {
-          throw new Error("No valid JSON found in the response");
-        }
-        
-        const jsonResponse = JSON.parse(jsonMatch[0]);
-        
-        if (typeof jsonResponse.reasoning !== 'string' || typeof jsonResponse.parameters !== 'object') {
-          throw new Error("Response JSON missing required fields");
-        }
-        
-        // Convert parameter names from title case to camelCase
-        const convertedParameters: Partial<DecisionParameters> = {};
-        if (jsonResponse.parameters) {
-          Object.entries(jsonResponse.parameters).forEach(([key, value]) => {
-            // Convert "Resource Preference" to "resourcePreference", etc.
-            const camelCaseKey = this.convertToCamelCase(key);
+        // Enhanced JSON extraction and parsing with robust error handling
+        try {
+          // Try using a regex to extract the JSON more precisely
+          const jsonMatch = content.match(/\{[\s\S]*\}/);
+          if (!jsonMatch) {
+            throw new Error("No valid JSON found in the response");
+          }
+          
+          // Clean the extracted JSON string to handle control characters
+          const cleanedJson = this.sanitizeJsonString(jsonMatch[0]);
+          const jsonResponse = JSON.parse(cleanedJson);
+          
+          if (typeof jsonResponse.reasoning !== 'string' || typeof jsonResponse.parameters !== 'object') {
+            throw new Error("Response JSON missing required fields");
+          }
+          
+          // Convert parameter names from title case to camelCase
+          const convertedParameters: Partial<DecisionParameters> = {};
+          if (jsonResponse.parameters) {
+            Object.entries(jsonResponse.parameters).forEach(([key, value]) => {
+              // Convert "Resource Preference" to "resourcePreference", etc.
+              const camelCaseKey = this.convertToCamelCase(key);
+              
+              // Direct assignment if it's a known parameter
+              if (typeof value === 'number' && this.isValidParameterName(camelCaseKey)) {
+                convertedParameters[camelCaseKey as keyof DecisionParameters] = value;
+              }
+            });
+          }
+          
+          // Create a summary of parameter changes
+          const parameterChangeSummary = Object.entries(convertedParameters)
+            .map(([key, value]) => `${key}: ${value}`)
+            .join(", ");
+          
+          this.inferenceQualityMetrics.successfulInferences++;
+          
+          return {
+            updatedParameters: convertedParameters,
+            reasoning: jsonResponse.reasoning,
+            parameterChangeSummary,
+            success: true
+          };
+        } catch (jsonError) {
+          console.error("Error parsing JSON:", jsonError);
+          
+          // Fallback approach - try to manually extract reasoning and parameters
+          // This is a last resort for malformed but recoverable JSON
+          try {
+            console.log("Attempting fallback JSON parsing");
             
-            // Map known parameter names if direct match not found
-            const mappedKey = this.mapParameterNameToCamelCase(camelCaseKey);
+            // Extract reasoning
+            const reasoningMatch = content.match(/"reasoning"\s*:\s*"([^"]*)"/);
+            const reasoning = reasoningMatch ? reasoningMatch[1] : "Unknown reasoning";
             
-            if (mappedKey && typeof value === 'number') {
-              convertedParameters[mappedKey as keyof DecisionParameters] = value;
-            }
-          });
+            // Extract parameters section
+            const paramsMatch = content.match(/"parameters"\s*:\s*\{([^}]*)\}/);
+            if (!paramsMatch) throw new Error("Could not extract parameters section");
+            
+            const parameterEntries = paramsMatch[1].split(',')
+              .map(entry => {
+                const [key, value] = entry.split(':').map(part => part.trim());
+                // Remove quotes if present
+                const cleanKey = key.replace(/^"(.*)"$/, '$1').trim();
+                const camelKey = this.convertToCamelCase(cleanKey);
+                const numValue = parseFloat(value);
+                return [camelKey, numValue];
+              })
+              .filter(([key, value]) => !isNaN(value as number) && this.isValidParameterName(key as string));
+              
+            const convertedParameters: Partial<DecisionParameters> = {};
+            parameterEntries.forEach(([key, value]) => {
+              if (this.isValidParameterName(key as string)) {
+                convertedParameters[key as keyof DecisionParameters] = value as number;
+              }
+            });
+            
+            const parameterChangeSummary = Object.entries(convertedParameters)
+              .map(([key, value]) => `${key}: ${value}`)
+              .join(", ");
+            
+            this.inferenceQualityMetrics.successfulInferences++;
+            
+            return {
+              updatedParameters: convertedParameters,
+              reasoning: reasoning,
+              parameterChangeSummary,
+              success: true
+            };
+          } catch (fallbackError) {
+            // If even the fallback fails, re-throw the original error
+            throw jsonError;
+          }
         }
-        
-        // Create a summary of parameter changes
-        const parameterChangeSummary = Object.entries(convertedParameters)
-          .map(([key, value]) => `${key}: ${value}`)
-          .join(", ");
-        
-        this.inferenceQualityMetrics.successfulInferences++;
-        
-        return {
-          updatedParameters: convertedParameters,
-          reasoning: jsonResponse.reasoning,
-          parameterChangeSummary,
-          success: true
-        };
       } catch (error) {
         console.error("Error parsing API response:", error);
-        console.error("Raw response:", data);
+        console.error("Raw response content:", data.content);
         this.inferenceQualityMetrics.failedInferences++;
         return {
           updatedParameters: {},
@@ -494,6 +547,28 @@ IMPORTANT: All parameter names must use camelCase (e.g., "resourcePreference", n
   }
   
   /**
+   * Sanitize a JSON string by removing or escaping invalid control characters
+   */
+  private sanitizeJsonString(jsonString: string): string {
+    // Remove or replace control characters that would break JSON.parse
+    return jsonString
+      // Replace control characters with spaces
+      .replace(/[\x00-\x09\x0B\x0C\x0E-\x1F]/g, ' ')
+      // Fix newlines (sometimes they're not properly escaped)
+      .replace(/\n/g, '\\n')
+      // Fix carriage returns
+      .replace(/\r/g, '\\r')
+      // Fix tabs
+      .replace(/\t/g, '\\t')
+      // Fix backspace
+      .replace(/\b/g, '\\b')
+      // Fix form feed
+      .replace(/\f/g, '\\f')
+      // Double backslashes (sometimes these cause issues)
+      .replace(/\\\\/g, '\\\\');
+  }
+
+  /**
    * Convert a string from title case or other formats to camelCase
    */
   private convertToCamelCase(input: string): string {
@@ -504,31 +579,29 @@ IMPORTANT: All parameter names must use camelCase (e.g., "resourcePreference", n
   }
 
   /**
-   * Map parameter names from various formats to the correct camelCase format
+   * Check if a parameter name is valid
    */
-  private mapParameterNameToCamelCase(key: string): keyof DecisionParameters | null {
-    // Direct mapping for common variations
-    const parameterMap: Record<string, keyof DecisionParameters> = {
-      // Title case to camelCase mappings
-      'resourcePreference': 'resourcePreference',
-      'hungerThreshold': 'hungerThreshold',
-      'criticalHungerThreshold': 'criticalHungerThreshold',
-      'foodSatiationThreshold': 'foodSatiationThreshold',
-      'energyLowThreshold': 'energyLowThreshold',
-      'criticalEnergyThreshold': 'criticalEnergyThreshold',
-      'energySatiationThreshold': 'energySatiationThreshold',
-      'collectionEfficiency': 'collectionEfficiency',
-      'explorationRange': 'explorationRange',
-      'explorationDuration': 'explorationDuration',
-      'restDuration': 'restDuration',
-      'memoryTrustFactor': 'memoryTrustFactor',
-      'noveltyPreference': 'noveltyPreference',
-      'persistenceFactor': 'persistenceFactor',
-      'cooperationTendency': 'cooperationTendency',
-      'personalSpaceFactor': 'personalSpaceFactor',
-    };
-
-    return parameterMap[key] || null;
+  private isValidParameterName(name: string): boolean {
+    const validParameterNames = [
+      'resourcePreference',
+      'hungerThreshold',
+      'criticalHungerThreshold',
+      'foodSatiationThreshold',
+      'energyLowThreshold',
+      'criticalEnergyThreshold',
+      'energySatiationThreshold',
+      'collectionEfficiency',
+      'explorationRange',
+      'explorationDuration',
+      'restDuration',
+      'memoryTrustFactor',
+      'noveltyPreference',
+      'persistenceFactor',
+      'cooperationTendency',
+      'personalSpaceFactor',
+    ];
+    
+    return validParameterNames.includes(name);
   }
   
   /**
