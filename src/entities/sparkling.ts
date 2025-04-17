@@ -864,6 +864,7 @@ export class Sparkling {
     // Draw a glow effect for neural energy level
     const energyRatio = this.neuralEnergy / this.stats.maxNeuralEnergy;
     if (energyRatio > 0) {
+      // Calculate the size of the energy glow
       const glowSize = bodySize + 5 * energyRatio;
       
       // Use more intense glow during inference
@@ -898,6 +899,34 @@ export class Sparkling {
         context.fill();
       }
       
+      // NEW: Draw "ready for inference" indicator when close to threshold
+      // This shows entities that will soon be able to trigger inference
+      if (energyRatio >= 0.6 && energyRatio < this.inferenceThreshold / this.stats.maxNeuralEnergy && 
+          this.inferenceStatus === InferenceStatus.IDLE && 
+          this.totalTime - this.lastInferenceTime >= this.inferenceInterval) {
+        // Draw a dotted circle to indicate approaching inference threshold
+        const readyGlowSize = glowSize + 6;
+        context.strokeStyle = `rgba(180, 100, 240, ${0.3 + 0.2 * Math.sin(this.totalTime * 3)})`;
+        context.setLineDash([3, 3]);
+        context.beginPath();
+        context.arc(this.position.x, this.position.y, readyGlowSize, 0, Math.PI * 2);
+        context.stroke();
+        context.setLineDash([]);
+        
+        // Show percentage to threshold
+        if (debug) {
+          const percentToThreshold = (this.neuralEnergy / this.inferenceThreshold * 100).toFixed(0);
+          context.fillStyle = 'rgba(180, 100, 240, 0.9)';
+          context.font = '8px Arial';
+          context.textAlign = 'center';
+          context.fillText(
+            `${percentToThreshold}%`,
+            this.position.x,
+            this.position.y - bodySize - 20
+          );
+        }
+      }
+      
       // Draw neural energy level indicator
       if (debug) {
         // Draw neural energy level bar
@@ -911,7 +940,13 @@ export class Sparkling {
         context.fillRect(barX, barY, barWidth, barHeight);
         
         // Energy level
-        context.fillStyle = `rgba(150, 50, 200, 0.8)`;
+        const energyColor = energyRatio >= this.inferenceThreshold / this.stats.maxNeuralEnergy ? 
+                            'rgba(180, 100, 240, 0.8)' :  // At or above threshold
+                            energyRatio >= 0.6 ? 
+                            'rgba(150, 70, 220, 0.8)' :   // Approaching threshold
+                            `rgba(150, 50, 200, 0.8)`;    // Normal level
+        
+        context.fillStyle = energyColor;
         context.fillRect(barX, barY, barWidth * energyRatio, barHeight);
         
         // Inference threshold marker
@@ -921,6 +956,19 @@ export class Sparkling {
         context.moveTo(thresholdX, barY - 1);
         context.lineTo(thresholdX, barY + barHeight + 1);
         context.stroke();
+        
+        // Show energy level as percentage when close to threshold or during inference
+        if ((energyRatio >= 0.6 || this.inferenceStatus !== InferenceStatus.IDLE) && 
+            !(energyRatio >= this.inferenceThreshold / this.stats.maxNeuralEnergy && this.inferenceStatus === InferenceStatus.IDLE)) {
+          context.fillStyle = 'rgba(255, 255, 255, 0.9)';
+          context.font = '7px Arial';
+          context.textAlign = 'center';
+          context.fillText(
+            `${(energyRatio * 100).toFixed(0)}%`,
+            barX + barWidth / 2,
+            barY - 2
+          );
+        }
       }
     }
     
@@ -959,46 +1007,51 @@ export class Sparkling {
         });
       }
     } else {
-      // Draw regular state label when not inferring
-      context.fillStyle = 'white';
-      context.font = '8px Arial';
-      context.textAlign = 'center';
-      context.fillText(
-        this.getStateLabel(), 
-        this.position.x, 
-        this.position.y - bodySize - 5
-      );
+      // Draw "Inference Ready" text when at or above threshold
+      if (energyRatio >= this.inferenceThreshold / this.stats.maxNeuralEnergy && 
+          this.totalTime - this.lastInferenceTime >= this.inferenceInterval) {
+        context.fillStyle = 'rgba(180, 100, 240, 0.9)';
+        context.font = '8px Arial';
+        context.textAlign = 'center';
+        context.fillText(
+          'inference ready', 
+          this.position.x, 
+          this.position.y - bodySize - 10
+        );
+      } else {
+        // Draw regular state label when not inferring
+        context.fillStyle = 'white';
+        context.font = '8px Arial';
+        context.textAlign = 'center';
+        context.fillText(
+          this.getStateLabel(), 
+          this.position.x, 
+          this.position.y - bodySize - 10
+        );
+      }
     }
     
-    // Draw the target position if we have one and debug is enabled
-    if (debug && this.targetPosition) {
-      context.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+    // Draw home point marker
+    if (this.homePosition) {
+      context.strokeStyle = `rgba(${parseInt(this.color.substr(1, 2), 16)}, ${parseInt(this.color.substr(3, 2), 16)}, ${parseInt(this.color.substr(5, 2), 16)}, 0.3)`;
+      context.setLineDash([2, 2]);
       context.beginPath();
       context.moveTo(this.position.x, this.position.y);
-      context.lineTo(this.targetPosition.x, this.targetPosition.y);
+      context.lineTo(this.homePosition.x, this.homePosition.y);
       context.stroke();
+      context.setLineDash([]);
       
-      context.fillStyle = 'rgba(255, 255, 255, 0.7)';
+      // Draw a little house/home symbol
+      context.fillStyle = this.color;
       context.beginPath();
-      context.arc(this.targetPosition.x, this.targetPosition.y, 3, 0, Math.PI * 2);
+      context.arc(this.homePosition.x, this.homePosition.y, 3, 0, Math.PI * 2);
       context.fill();
     }
     
-    // Draw home position if debug is enabled
-    if (debug && this.homePosition) {
-      context.fillStyle = 'rgba(255, 255, 100, 0.5)';
-      context.beginPath();
-      context.arc(this.homePosition.x, this.homePosition.y, 5, 0, Math.PI * 2);
-      context.fill();
-      context.fillText('home', this.homePosition.x, this.homePosition.y - 10);
-    }
-    
-    // Draw memory visualization if debug is enabled
+    // If in debug mode, draw additional information
     if (debug) {
-      this.renderMemory(context);
-      
-      // Draw parameter visualization
       this.renderParameterIndicators(context);
+      this.renderMemory(context);
     }
   }
   

@@ -344,63 +344,6 @@ export class Simulation {
     
     // Pass the inference system to the renderer for debug info
     this.renderer.drawDebugInfo(this.timeManager.getFPS(), this.world, this.inferenceSystem);
-    
-    // Draw additional debug information if enabled
-    if (this.showDebug) {
-      this.drawMemoryStats();
-    }
-  }
-
-  /**
-   * Draw memory statistics for debugging
-   */
-  private drawMemoryStats(): void {
-    const context = this.renderer.getContext();
-    context.fillStyle = 'white';
-    context.font = '12px Arial';
-    context.textAlign = 'right';
-    
-    // Position on right side
-    const rightEdge = this.renderer.getContext().canvas.width - 10;
-    
-    // Start below the world dimensions info
-    let y = 120;
-    
-    context.fillText('Memory Stats:', rightEdge, y);
-    y += 20;
-    
-    for (const sparkling of this.sparklings) {
-      const memory = sparkling.getMemory();
-      context.fillText(
-        `Sparkling ${sparkling.getId()}: ${memory.getCount()}/${memory.getCapacity()} memories`,
-        rightEdge, 
-        y
-      );
-      y += 20;
-    }
-    
-    // Show inference stats
-    y += 10;
-    context.fillText('Inference Stats:', rightEdge, y);
-    y += 20;
-    
-    const metrics = this.inferenceSystem.getInferenceQualityMetrics();
-    context.fillText(`Total inferences: ${metrics.totalInferences}`, rightEdge, y);
-    y += 20;
-    
-    context.fillText(`Success rate: ${
-      metrics.totalInferences ? 
-      ((metrics.successfulInferences / metrics.totalInferences) * 100).toFixed(1) + '%' : 
-      'N/A'
-    }`, rightEdge, y);
-    y += 20;
-    
-    context.fillText(`Avg response time: ${
-      metrics.averageResponseTime.toFixed(2)
-    }ms`, rightEdge, y);
-    
-    // Reset text alignment for other rendering
-    context.textAlign = 'left';
   }
 
   /**
