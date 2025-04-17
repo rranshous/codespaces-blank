@@ -8,6 +8,7 @@ import { Position } from '@entities/sparklingTypes';
 import { BehavioralProfile } from '@entities/decisionParameters';
 import { InferenceSystem } from '@core/inference';
 import { InferenceQualityTester } from '@core/inferenceQualityTester';
+import { MemoryEventType } from '@entities/memoryTypes';
 
 /**
  * Main simulation class that manages the entire simulation
@@ -390,6 +391,200 @@ export class Simulation {
       controlsDiv.appendChild(inferenceToggleButton);
       controlsDiv.appendChild(proxyToggleButton);
       controlsDiv.appendChild(runTestsButton);
+    }
+
+    // Create tooltip element for Sparkling hover information
+    this.createSparklingTooltip();
+    
+    // Add mouse move event listener to canvas for Sparkling hover detection
+    const canvas = this.renderer.getContext().canvas;
+    canvas.addEventListener('mousemove', this.handleCanvasMouseMove.bind(this));
+    canvas.addEventListener('mouseout', this.hideSparklingTooltip.bind(this));
+  }
+
+  /**
+   * Create tooltip element for displaying Sparkling information on hover
+   */
+  private createSparklingTooltip(): void {
+    // Create tooltip element if it doesn't exist
+    let tooltipElement = document.getElementById('sparkling-tooltip');
+    if (!tooltipElement) {
+      tooltipElement = document.createElement('div');
+      tooltipElement.id = 'sparkling-tooltip';
+      tooltipElement.style.position = 'absolute';
+      tooltipElement.style.display = 'none';
+      tooltipElement.style.zIndex = '1000';
+      tooltipElement.style.backgroundColor = 'rgba(0, 0, 0, 0.85)';
+      tooltipElement.style.color = 'white';
+      tooltipElement.style.padding = '10px 15px';
+      tooltipElement.style.borderRadius = '5px';
+      tooltipElement.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.3)';
+      tooltipElement.style.fontSize = '12px';
+      tooltipElement.style.fontFamily = 'monospace';
+      tooltipElement.style.minWidth = '300px';
+      tooltipElement.style.maxWidth = '400px';
+      tooltipElement.style.whiteSpace = 'pre-wrap';
+      tooltipElement.style.pointerEvents = 'none'; // Prevent the tooltip from interfering with mouse events
+      document.body.appendChild(tooltipElement);
+    }
+  }
+
+  /**
+   * Handle mouse movement over the canvas
+   */
+  private handleCanvasMouseMove(event: MouseEvent): void {
+    const canvas = this.renderer.getContext().canvas;
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = event.clientX - rect.left;
+    const mouseY = event.clientY - rect.top;
+    
+    // Check if mouse is over any Sparkling
+    const hoveredSparkling = this.findSparklingAtPosition(mouseX, mouseY);
+    
+    if (hoveredSparkling) {
+      this.showSparklingTooltip(hoveredSparkling, event.clientX, event.clientY);
+    } else {
+      this.hideSparklingTooltip();
+    }
+  }
+
+  /**
+   * Find a Sparkling at the given position
+   */
+  private findSparklingAtPosition(x: number, y: number): Sparkling | null {
+    // Check each Sparkling's position
+    for (const sparkling of this.sparklings) {
+      const position = sparkling.getPosition();
+      const dx = position.x - x;
+      const dy = position.y - y;
+      const distanceSquared = dx * dx + dy * dy;
+      
+      // Consider the Sparkling's size (using a radius of 15 for hover detection)
+      if (distanceSquared < 15 * 15) {
+        return sparkling;
+      }
+    }
+    
+    return null;
+  }
+
+  /**
+   * Show tooltip with detailed information about a Sparkling
+   */
+  private showSparklingTooltip(sparkling: Sparkling, mouseX: number, mouseY: number): void {
+    const tooltipElement = document.getElementById('sparkling-tooltip');
+    if (!tooltipElement) return;
+    
+    // Get Sparkling details
+    const id = sparkling.getId();
+    const state = sparkling.getState();
+    const resourceLevels = sparkling.getResourceLevels();
+    const parameters = sparkling.getParameters();
+    const profile = sparkling.getProfile();
+    const memory = sparkling.getMemory();
+    const inferenceStatus = sparkling.getInferenceStatus();
+    const lastInference = sparkling.getLastInferenceInfo();
+    
+    // Format time since last inference
+    let lastInferenceText = 'Never';
+    if (lastInference.timestamp > 0) {
+      const timeSince = (this.timeManager.getCurrentTime() - lastInference.timestamp).toFixed(1);
+      lastInferenceText = `${timeSince}s ago`;
+      if (lastInference.success) {
+        lastInferenceText += ' (Success)';
+      } else {
+        lastInferenceText += ' (Failed)';
+      }
+    }
+    
+    // Create tooltip content with sections
+    let content = `<div style="color: #8be9fd; font-weight: bold; border-bottom: 1px solid #6272a4; margin-bottom: 5px;">Sparkling #${id}</div>`;
+    
+    // Basic status section
+    content += `<div style="margin-bottom: 5px;"><span style="color: #ff79c6;">Status:</span> ${state}</div>`;
+    content += `<div style="margin-bottom: 5px;"><span style="color: #ff79c6;">Inference:</span> ${inferenceStatus}</div>`;
+    
+    // Resources section
+    content += `<div style="color: #f1fa8c; margin-top: 8px; margin-bottom: 3px;">Resources</div>`;
+    content += `<div style="margin-left: 10px;">`;
+    content += `Food: ${resourceLevels.food.toFixed(1)} / ${parameters.foodSatiationThreshold.toFixed(1)} threshold`;
+    content += `</div>`;
+    content += `<div style="margin-left: 10px;">`;
+    content += `Neural Energy: ${resourceLevels.neuralEnergy.toFixed(1)} (${(resourceLevels.neuralEnergy / sparkling.getMaxNeuralEnergy() * 100).toFixed(0)}%)`;
+    content += `</div>`;
+    
+    // Memory section
+    content += `<div style="color: #f1fa8c; margin-top: 8px; margin-bottom: 3px;">Memory</div>`;
+    content += `<div style="margin-left: 10px;">`;
+    content += `Food Locations: ${memory.getMemoriesByType(MemoryEventType.RESOURCE_FOUND).length}`;
+    content += `</div>`;
+    content += `<div style="margin-left: 10px;">`;
+    content += `Energy Locations: ${memory.getMemoriesByType(MemoryEventType.ENERGY_FOUND).length}`;
+    content += `</div>`;
+    
+    // Inference section
+    content += `<div style="color: #f1fa8c; margin-top: 8px; margin-bottom: 3px;">Inference</div>`;
+    content += `<div style="margin-left: 10px;">`;
+    content += `Last Inference: ${lastInferenceText}`;
+    content += `</div>`;
+    
+    if (lastInference.reasoning) {
+      content += `<div style="margin-left: 10px; margin-top: 3px; font-style: italic; color: #6272a4;">`;
+      content += lastInference.reasoning.length > 100 
+        ? lastInference.reasoning.substring(0, 100) + '...' 
+        : lastInference.reasoning;
+      content += `</div>`;
+    }
+    
+    // Key parameters section
+    content += `<div style="color: #f1fa8c; margin-top: 8px; margin-bottom: 3px;">Key Parameters</div>`;
+    content += `<div style="margin-left: 10px;">`;
+    content += `Profile: ${profile}`;
+    content += `</div>`;
+    content += `<div style="margin-left: 10px;">`;
+    content += `Resource Preference: ${parameters.resourcePreference.toFixed(2)} (${parameters.resourcePreference < 0 ? 'Food' : parameters.resourcePreference > 0 ? 'Energy' : 'Neutral'})`;
+    content += `</div>`;
+    content += `<div style="margin-left: 10px;">`;
+    content += `Memory Trust: ${parameters.memoryTrustFactor.toFixed(2)}`;
+    content += `</div>`;
+    content += `<div style="margin-left: 10px;">`;
+    content += `Novelty Preference: ${parameters.noveltyPreference.toFixed(2)}`;
+    content += `</div>`;
+    
+    tooltipElement.innerHTML = content;
+    
+    // Position the tooltip near the mouse but ensure it stays in viewport
+    const tooltipWidth = tooltipElement.offsetWidth || 300;
+    const tooltipHeight = tooltipElement.offsetHeight || 200;
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+    
+    // Add offset to prevent tooltip from appearing directly under the cursor
+    let tooltipX = mouseX + 10;
+    let tooltipY = mouseY + 10;
+    
+    // Ensure tooltip stays within window bounds
+    if (tooltipX + tooltipWidth > windowWidth) {
+      tooltipX = mouseX - tooltipWidth - 10;
+    }
+    
+    if (tooltipY + tooltipHeight > windowHeight) {
+      tooltipY = mouseY - tooltipHeight - 10;
+    }
+    
+    // Position and show the tooltip
+    tooltipElement.style.left = `${tooltipX}px`;
+    tooltipElement.style.top = `${tooltipY}px`;
+    tooltipElement.style.display = 'block';
+  }
+
+  /**
+   * Hide the Sparkling tooltip
+   */
+  private hideSparklingTooltip(): void {
+    const tooltipElement = document.getElementById('sparkling-tooltip');
+    if (tooltipElement) {
+      tooltipElement.style.display = 'none';
     }
   }
 

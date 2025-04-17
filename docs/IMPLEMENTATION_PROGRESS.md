@@ -148,6 +148,10 @@ This document tracks our progress in implementing the Sparklings Neural Energy S
 - Added simulation time display to the debug view with minutes and seconds format
 - Enhanced success rate display with color-coding based on performance level
 - Improved inference metrics section with visual organization for better readability
+- Added interactive hover tooltip with detailed Sparkling information
+- Enhanced neural energy visualization with clearer threshold indicators
+- Implemented dotted circle animation for Sparklings approaching inference threshold
+- Added "inference ready" text indicator for Sparklings that can trigger inference
 
 ### Inference System Improvements
 - Fixed inference execution workflow to properly handle state transitions

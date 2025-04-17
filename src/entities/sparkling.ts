@@ -1286,4 +1286,45 @@ export class Sparkling {
   public updateParameters(parameters: Partial<DecisionParameters>): void {
     this.parameters = { ...this.parameters, ...parameters };
   }
+  
+  /**
+   * Get the inference status
+   */
+  public getInferenceStatus(): string {
+    return this.inferenceStatus;
+  }
+  
+  /**
+   * Get the maximum neural energy capacity
+   */
+  public getMaxNeuralEnergy(): number {
+    return this.stats.maxNeuralEnergy;
+  }
+  
+  /**
+   * Get information about the last inference
+   */
+  public getLastInferenceInfo(): { timestamp: number; success: boolean; reasoning: string } {
+    // Get the most recent inference memory
+    const inferenceMemories = this.memory.getMemoriesByType(MemoryEventType.INFERENCE_PERFORMED) as InferenceMemoryEntry[];
+    
+    // Sort by recency (most recent first)
+    const sortedMemories = [...inferenceMemories].sort((a, b) => b.timestamp - a.timestamp);
+    
+    if (sortedMemories.length > 0) {
+      const lastInference = sortedMemories[0];
+      return {
+        timestamp: lastInference.timestamp,
+        success: lastInference.success,
+        reasoning: lastInference.reasoning
+      };
+    }
+    
+    // Return default values if no inference has been performed
+    return {
+      timestamp: 0,
+      success: false,
+      reasoning: ''
+    };
+  }
 }

@@ -12,6 +12,7 @@ export class TimeManager {
   private frameCount: number = 0;
   private fpsUpdateInterval: number = 1000; // Update FPS once per second
   private lastFpsUpdate: number = 0;
+  private accumulatedTime: number = 0;
 
   /**
    * Updates time values based on the current timestamp
@@ -27,6 +28,9 @@ export class TimeManager {
     // Calculate delta time in seconds
     this.deltaTime = (timestamp - this.lastTimestamp) / 1000;
     this.lastTimestamp = timestamp;
+    
+    // Update accumulated time
+    this.accumulatedTime += this.deltaTime;
 
     // Update FPS calculation
     this.frameCount++;
@@ -52,6 +56,13 @@ export class TimeManager {
   }
 
   /**
+   * Get the current simulation time
+   */
+  public getCurrentTime(): number {
+    return this.accumulatedTime;
+  }
+
+  /**
    * Reset the time manager
    */
   public reset(): void {
@@ -60,5 +71,6 @@ export class TimeManager {
     this.fps = 0;
     this.frameCount = 0;
     this.lastFpsUpdate = 0;
+    this.accumulatedTime = 0;
   }
 }
