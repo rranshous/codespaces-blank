@@ -217,6 +217,8 @@ ${formatInferenceMemories(inferenceMemories)}
 - Persistence Factor: ${currentParameters.persistenceFactor.toFixed(2)} (tendency to stick with current goal)
 - Cooperation Tendency: ${currentParameters.cooperationTendency.toFixed(2)} (willingness to cooperate)
 - Personal Space Factor: ${currentParameters.personalSpaceFactor.toFixed(0)} (preferred distance from others)
+- Inference Threshold: ${currentParameters.inferenceThreshold.toFixed(0)} (neural energy threshold to trigger inference)
+- Inference Interval: ${currentParameters.inferenceInterval.toFixed(0)} (seconds between inference attempts)
 
 # Consider
 What instincts should you follow to optimize your survival?
@@ -241,7 +243,9 @@ Return your response in this JSON format with camelCase parameter names:
     "noveltyPreference": number,
     "persistenceFactor": number,
     "cooperationTendency": number,
-    "personalSpaceFactor": number
+    "personalSpaceFactor": number,
+    "inferenceThreshold": number,
+    "inferenceInterval": number
   }
 }
 
@@ -335,6 +339,32 @@ IMPORTANT: All parameter names must use camelCase (e.g., "resourcePreference", n
       updatedParameters.cooperationTendency = Math.max(0, currentParameters.cooperationTendency - 0.1);
       reasoning += "- Decreased cooperation tendency due to negative encounters.\n";
       parameterChangeSummary.push("Decreased cooperation tendency");
+    }
+    
+    // Adjust inference parameters based on energy levels
+    if (energyRatio > 0.8) {
+      // High energy, lower the inference threshold to use it more often
+      updatedParameters.inferenceThreshold = Math.max(50, currentParameters.inferenceThreshold - 5);
+      reasoning += "- Decreased inference threshold to use neural inference more often when energy is abundant.\n";
+      parameterChangeSummary.push("Decreased inference threshold");
+    } else if (energyRatio < 0.3) {
+      // Low energy, raise the threshold to be more conservative
+      updatedParameters.inferenceThreshold = Math.min(100, currentParameters.inferenceThreshold + 5);
+      reasoning += "- Increased inference threshold to be more conservative with neural energy.\n";
+      parameterChangeSummary.push("Increased inference threshold");
+    }
+    
+    // Adjust inference interval based on overall situation
+    if (foodRatio < 0.3 || energyRatio < 0.3) {
+      // In challenging situations, increase inference interval to save energy
+      updatedParameters.inferenceInterval = Math.min(30, currentParameters.inferenceInterval + 3);
+      reasoning += "- Increased inference interval to conserve energy during resource scarcity.\n";
+      parameterChangeSummary.push("Increased inference interval");
+    } else if (foodRatio > 0.7 && energyRatio > 0.7) {
+      // When resources are abundant, decrease interval to use inference more often
+      updatedParameters.inferenceInterval = Math.max(10, currentParameters.inferenceInterval - 2);
+      reasoning += "- Decreased inference interval to think more frequently during resource abundance.\n";
+      parameterChangeSummary.push("Decreased inference interval");
     }
     
     // If no significant changes were made, make a minor adjustment to exploration
@@ -599,6 +629,8 @@ IMPORTANT: All parameter names must use camelCase (e.g., "resourcePreference", n
       'persistenceFactor',
       'cooperationTendency',
       'personalSpaceFactor',
+      'inferenceThreshold',
+      'inferenceInterval'
     ];
     
     return validParameterNames.includes(name);
@@ -683,7 +715,9 @@ IMPORTANT: All parameter names must use camelCase (e.g., "resourcePreference", n
       memoryTrustFactor: [0.1, 1],
       noveltyPreference: [0, 1],
       persistenceFactor: [0, 1],
-      cooperationTendency: [0, 1]
+      cooperationTendency: [0, 1],
+      inferenceThreshold: [50, 100],
+      inferenceInterval: [10, 30]
     };
     
     // Validate each parameter

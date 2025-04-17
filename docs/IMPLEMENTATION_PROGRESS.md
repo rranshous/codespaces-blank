@@ -127,6 +127,16 @@ This document tracks our progress in implementing the Sparklings Neural Energy S
 
 ## Recent Updates (April 17, 2025)
 
+### Configurable Inference Parameters
+- Added configurable inference threshold and interval parameters to the DecisionParameters interface
+- Modified the Sparkling class to use these parameters instead of hard-coded values
+- Updated inference system to include these parameters in the prompt and parse them from responses
+- Enhanced the mockInference function to dynamically adjust these parameters based on situation
+- Updated all inference tests to include the new parameters in their test cases
+- Parameters allow for dynamic adjustment of when inference occurs based on energy levels and situation
+- Higher energy/food abundance leads to lower thresholds and intervals for more frequent thinking
+- Lower energy/food scarcity leads to higher thresholds and intervals to conserve resources
+
 ### Food Consumption Rate Adjustments
 - Reduced the base food consumption rate from 1.0 to 0.5 units per second (75% reduction from original 2.0)
 - Lowered the movement food cost from 0.2 to 0.1 units per second (80% reduction from original 0.5)

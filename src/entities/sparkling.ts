@@ -42,9 +42,7 @@ export class Sparkling {
   private inferenceStatus: InferenceStatus = InferenceStatus.IDLE;
   private lastInferenceTime: number = 0;
   private inferenceEnergyCost: number = 30; // Base cost of inference
-  private inferenceThreshold: number = 70; // Default energy threshold for triggering inference
   private inferenceTimer: number = 0; // Timer for inference animation
-  private inferenceInterval: number = 15; // Minimum time between inferences (seconds)
   private lastInferenceReasoning: string = '';
   
   /**
@@ -147,8 +145,8 @@ export class Sparkling {
     switch (this.inferenceStatus) {
       case InferenceStatus.IDLE:
         // Check if we have enough neural energy to perform inference
-        if (this.neuralEnergy >= this.inferenceThreshold && 
-            this.totalTime - this.lastInferenceTime >= this.inferenceInterval) {
+        if (this.neuralEnergy >= this.parameters.inferenceThreshold && 
+            this.totalTime - this.lastInferenceTime >= this.parameters.inferenceInterval) {
           // Begin the inference process
           this.inferenceStatus = InferenceStatus.PREPARING;
           this.inferenceTimer = 0;
@@ -898,9 +896,9 @@ export class Sparkling {
       
       // NEW: Draw "ready for inference" indicator when close to threshold
       // This shows entities that will soon be able to trigger inference
-      if (energyRatio >= 0.6 && energyRatio < this.inferenceThreshold / this.stats.maxNeuralEnergy && 
+      if (energyRatio >= 0.6 && energyRatio < this.parameters.inferenceThreshold / this.stats.maxNeuralEnergy && 
           this.inferenceStatus === InferenceStatus.IDLE && 
-          this.totalTime - this.lastInferenceTime >= this.inferenceInterval) {
+          this.totalTime - this.lastInferenceTime >= this.parameters.inferenceInterval) {
         // Draw a dotted circle to indicate approaching inference threshold
         const readyGlowSize = glowSize + 6;
         context.strokeStyle = `rgba(180, 100, 240, ${0.3 + 0.2 * Math.sin(this.totalTime * 3)})`;
@@ -912,7 +910,7 @@ export class Sparkling {
         
         // Show percentage to threshold
         if (debug) {
-          const percentToThreshold = (this.neuralEnergy / this.inferenceThreshold * 100).toFixed(0);
+          const percentToThreshold = (this.neuralEnergy / this.parameters.inferenceThreshold * 100).toFixed(0);
           context.fillStyle = 'rgba(180, 100, 240, 0.9)';
           context.font = '8px Arial';
           context.textAlign = 'center';
@@ -937,7 +935,7 @@ export class Sparkling {
         context.fillRect(barX, barY, barWidth, barHeight);
         
         // Energy level
-        const energyColor = energyRatio >= this.inferenceThreshold / this.stats.maxNeuralEnergy ? 
+        const energyColor = energyRatio >= this.parameters.inferenceThreshold / this.stats.maxNeuralEnergy ? 
                             'rgba(180, 100, 240, 0.8)' :  // At or above threshold
                             energyRatio >= 0.6 ? 
                             'rgba(150, 70, 220, 0.8)' :   // Approaching threshold
@@ -947,7 +945,7 @@ export class Sparkling {
         context.fillRect(barX, barY, barWidth * energyRatio, barHeight);
         
         // Inference threshold marker
-        const thresholdX = barX + (this.inferenceThreshold / this.stats.maxNeuralEnergy) * barWidth;
+        const thresholdX = barX + (this.parameters.inferenceThreshold / this.stats.maxNeuralEnergy) * barWidth;
         context.strokeStyle = 'rgba(255, 255, 255, 0.7)';
         context.beginPath();
         context.moveTo(thresholdX, barY - 1);
@@ -956,7 +954,7 @@ export class Sparkling {
         
         // Show energy level as percentage when close to threshold or during inference
         if ((energyRatio >= 0.6 || this.inferenceStatus !== InferenceStatus.IDLE) && 
-            !(energyRatio >= this.inferenceThreshold / this.stats.maxNeuralEnergy && this.inferenceStatus === InferenceStatus.IDLE)) {
+            !(energyRatio >= this.parameters.inferenceThreshold / this.stats.maxNeuralEnergy && this.inferenceStatus === InferenceStatus.IDLE)) {
           context.fillStyle = 'rgba(255, 255, 255, 0.9)';
           context.font = '7px Arial';
           context.textAlign = 'center';
@@ -1005,8 +1003,8 @@ export class Sparkling {
       }
     } else {
       // Draw "Inference Ready" text when at or above threshold
-      if (energyRatio >= this.inferenceThreshold / this.stats.maxNeuralEnergy && 
-          this.totalTime - this.lastInferenceTime >= this.inferenceInterval) {
+      if (energyRatio >= this.parameters.inferenceThreshold / this.stats.maxNeuralEnergy && 
+          this.totalTime - this.lastInferenceTime >= this.parameters.inferenceInterval) {
         context.fillStyle = 'rgba(180, 100, 240, 0.9)';
         context.font = '8px Arial';
         context.textAlign = 'center';

@@ -24,7 +24,11 @@ const DEFAULT_PARAMETERS: DecisionParameters = {
   memoryTrustFactor: 0.7,        // Moderate trust in memory
   noveltyPreference: 0.5,        // Balanced preference for novelty
   persistenceFactor: 0.4,        // Moderate persistence
-  cooperationTendency: 0.5       // Neutral cooperation tendency
+  cooperationTendency: 0.5,      // Neutral cooperation tendency
+  
+  // Inference parameters
+  inferenceThreshold: 70,        // Default neural energy threshold for inference
+  inferenceInterval: 15          // Default minimum time between inferences
 };
 
 /**
@@ -136,6 +140,10 @@ export function createRandomizedParameters(
   params.persistenceFactor = varyParam(params.persistenceFactor, 0.1, 0.9);
   params.cooperationTendency = varyParam(params.cooperationTendency, 0.1, 1);
   
+  // Apply variation to inference parameters
+  params.inferenceThreshold = varyParam(params.inferenceThreshold, 50, 100);
+  params.inferenceInterval = varyParam(params.inferenceInterval, 10, 30);
+  
   return params;
 }
 
@@ -175,7 +183,7 @@ export function blendParameters(
  */
 export function evolveParameters(
   params: DecisionParameters,
-  area: 'food' | 'energy' | 'exploration' | 'social',
+  area: 'food' | 'energy' | 'exploration' | 'social' | 'inference',
   successFactor: number
 ): DecisionParameters {
   const result = { ...params };
@@ -208,6 +216,12 @@ export function evolveParameters(
     case 'social':
       result.cooperationTendency = adjust(result.cooperationTendency, successFactor, 0.1, 1);
       result.personalSpaceFactor = adjust(result.personalSpaceFactor, -successFactor, 10, 50);
+      break;
+      
+    case 'inference':
+      // Adjust inference parameters based on success
+      result.inferenceThreshold = adjust(result.inferenceThreshold, successFactor > 0 ? -1 : 1, 50, 100);
+      result.inferenceInterval = adjust(result.inferenceInterval, successFactor > 0 ? -1 : 1, 10, 30);
       break;
   }
   

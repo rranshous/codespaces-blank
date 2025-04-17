@@ -35,4 +35,8 @@ export interface DecisionParameters {
   noveltyPreference: number;       // 0-1, preference for exploring new areas vs familiar areas
   persistenceFactor: number;       // 0-1, how persistent the Sparkling is in following a goal
   cooperationTendency: number;     // 0-1, tendency to cooperate with other Sparklings
+  
+  // Inference parameters
+  inferenceThreshold: number;      // Neural energy level required to trigger inference
+  inferenceInterval: number;       // Minimum time in seconds between inference operations
 }

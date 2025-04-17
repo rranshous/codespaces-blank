@@ -67,7 +67,9 @@ export class InferenceQualityTester {
         memoryTrustFactor: 0.5,
         noveltyPreference: 0.5,
         persistenceFactor: 0.5,
-        cooperationTendency: 0.5
+        cooperationTendency: 0.5,
+        inferenceThreshold: 70, // Default energy threshold for inference
+        inferenceInterval: 15   // Default seconds between inferences
       },
       testDescription: "Low food, high energy scenario",
       expectedOutcome: {
@@ -97,7 +99,9 @@ export class InferenceQualityTester {
         memoryTrustFactor: 0.5,
         noveltyPreference: 0.5,
         persistenceFactor: 0.5,
-        cooperationTendency: 0.5
+        cooperationTendency: 0.5,
+        inferenceThreshold: 70, // Default energy threshold for inference
+        inferenceInterval: 15   // Default seconds between inferences
       },
       testDescription: "High food, low energy scenario",
       expectedOutcome: {
@@ -127,7 +131,9 @@ export class InferenceQualityTester {
         memoryTrustFactor: 0.5,
         noveltyPreference: 0.5,
         persistenceFactor: 0.5,
-        cooperationTendency: 0.5
+        cooperationTendency: 0.5,
+        inferenceThreshold: 70, // Default energy threshold for inference
+        inferenceInterval: 15   // Default seconds between inferences
       },
       testDescription: "Missing resource memories",
       expectedOutcome: {
