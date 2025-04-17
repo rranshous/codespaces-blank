@@ -60,7 +60,7 @@ export class Simulation {
     // Clear existing sparklings
     this.sparklings = [];
     
-    // Create the initial sparklings
+    // Create the initial sparklings with varied behavioral profiles
     for (let i = 0; i < this.config.initialSparklingCount; i++) {
       // Generate a random position within the world
       const position: Position = {
@@ -68,8 +68,34 @@ export class Simulation {
         y: Math.random() * this.config.worldHeight
       };
       
-      // Create a new sparkling
-      const sparkling = new Sparkling(i, position, this.config);
+      // Assign different behavioral profiles to create variety
+      // This will ensure some Sparklings prioritize energy collection
+      let profile: BehavioralProfile;
+      
+      // Distribute different profiles to create variety
+      const profileRoll = Math.random();
+      if (profileRoll < 0.3) {
+        // 30% Gatherers (food focused)
+        profile = BehavioralProfile.GATHERER;
+      } else if (profileRoll < 0.5) {
+        // 20% Energy Seekers
+        profile = BehavioralProfile.ENERGY_SEEKER;
+      } else if (profileRoll < 0.7) {
+        // 20% Explorers
+        profile = BehavioralProfile.EXPLORER;
+      } else if (profileRoll < 0.85) {
+        // 15% Balanced
+        profile = BehavioralProfile.BALANCED;
+      } else if (profileRoll < 0.95) {
+        // 10% Cautious
+        profile = BehavioralProfile.CAUTIOUS;
+      } else {
+        // 5% Social
+        profile = BehavioralProfile.SOCIAL;
+      }
+      
+      // Create a new sparkling with the assigned profile
+      const sparkling = new Sparkling(i, position, this.config, profile);
       this.sparklings.push(sparkling);
     }
   }
