@@ -20,7 +20,7 @@ export const DEFAULT_ANTHROPIC_CONFIG: AnthropicConfig = {
   maxTokens: 1000,
   temperature: 0.7,
   apiEndpoint: 'https://api.anthropic.com/v1/messages',
-  proxyEndpoint: 'https://solid-space-system-pjwppx7rqhgw-3000.app.github.dev/api/anthropic/messages',
+  proxyEndpoint: '/api/anthropic/messages', // Using relative URL to work with unified server
   useProxy: true
 };
 

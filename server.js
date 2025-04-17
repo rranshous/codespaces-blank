@@ -1,22 +1,15 @@
-// Backend proxy server for Anthropic API requests
+// Backend proxy server and frontend static file server
 const express = require('express');
-const cors = require('cors');
 const axios = require('axios');
 const dotenv = require('dotenv');
 const rateLimit = require('express-rate-limit');
+const path = require('path');
 
 // Load environment variables
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-
-// Configure CORS
-app.use(cors({
-  origin: process.env.CORS_ORIGIN || '*',
-  methods: 'POST',
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
 
 // Parse JSON bodies
 app.use(express.json());
@@ -35,7 +28,7 @@ app.use('/api', apiLimiter);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'OK', message: 'Proxy server is running' });
+  res.status(200).json({ status: 'OK', message: 'Server is running' });
 });
 
 // Anthropic API proxy endpoint
@@ -81,9 +74,19 @@ app.post('/api/anthropic/messages', async (req, res) => {
   }
 });
 
+// Serve static files from the dist directory (our frontend)
+app.use(express.static(path.join(__dirname, 'dist')));
+
+// For any other routes, serve the index.html to support SPA routing
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+});
+
 // Start the server
 app.listen(PORT, () => {
-  console.log(`Proxy server listening on port ${PORT}`);
+  console.log(`Server listening on port ${PORT}`);
+  console.log(`Frontend accessible at http://localhost:${PORT}`);
+  console.log(`API endpoints available at http://localhost:${PORT}/api/`);
 });
 
 module.exports = app; // For testing
