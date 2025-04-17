@@ -173,37 +173,35 @@ export class InferenceSystem {
     
     // Create the prompt
     const prompt = `
-You are a Sparkling (ID: ${sparklingId}) in a simulation. Help improve your decision parameters based on your current situation.
+    # Your Current Status:
+    - State: ${state}
+    - Food: ${resourceLevels.food.toFixed(1)}/${maxLevels.maxFood} (${((resourceLevels.food / maxLevels.maxFood) * 100).toFixed(1)}%)
+    - Neural Energy: ${resourceLevels.neuralEnergy.toFixed(1)}/${maxLevels.maxNeuralEnergy} (${((resourceLevels.neuralEnergy / maxLevels.maxNeuralEnergy) * 100).toFixed(1)}%)
 
-Current State:
-- State: ${state}
-- Food: ${resourceLevels.food.toFixed(1)}/${maxLevels.maxFood} (${((resourceLevels.food / maxLevels.maxFood) * 100).toFixed(1)}%)
-- Neural Energy: ${resourceLevels.neuralEnergy.toFixed(1)}/${maxLevels.maxNeuralEnergy} (${((resourceLevels.neuralEnergy / maxLevels.maxNeuralEnergy) * 100).toFixed(1)}%)
-
-Memory:
-Food Resources Found:
+# Your Memories
+## Food Found
 ${formatMemories(resourceMemories, 'food')}
 
-Food Resources Depleted:
+## Food Depleted:
 ${formatMemories(resourceDepletedMemories, 'depleted food')}
 
-Neural Energy Found:
+## Neural Energy Found:
 ${formatMemories(energyMemories, 'energy')}
 
-Neural Energy Depleted:
+## Neural Energy Depleted:
 ${formatMemories(energyDepletedMemories, 'depleted energy')}
 
-Encounters:
+## Encounters with other entities:
 ${formatMemories(encounterMemories, 'encounter')}
 
-Terrain:
+## Terrain:
 ${formatMemories(terrainMemories, 'terrain')}
 
-Previous Inference:
+## Previous Thoughts:
 ${formatInferenceMemories(inferenceMemories)}
 
-Current Decision Parameters:
-- Resource Preference (food vs energy): ${currentParameters.resourcePreference.toFixed(2)} (-1 = prefer food, 0 = neutral, 1 = prefer energy)
+## Current Instincts
+- Resource Preference: ${currentParameters.resourcePreference.toFixed(2)} (-1 = prefer food, 0 = neutral, 1 = prefer energy)
 - Hunger Threshold: ${currentParameters.hungerThreshold.toFixed(2)} (food level below which to seek food)
 - Critical Hunger Threshold: ${currentParameters.criticalHungerThreshold.toFixed(2)} (critical food level)
 - Food Satiation Threshold: ${currentParameters.foodSatiationThreshold.toFixed(2)} (food level at which to stop seeking)
@@ -220,12 +218,10 @@ Current Decision Parameters:
 - Cooperation Tendency: ${currentParameters.cooperationTendency.toFixed(2)} (willingness to cooperate)
 - Personal Space Factor: ${currentParameters.personalSpaceFactor.toFixed(0)} (preferred distance from others)
 
-Based on my current state and memory, provide adjustments to my decision parameters to improve survival and intelligence. Consider:
-1. Resource balance - whether I need more food or neural energy
-2. Exploration vs exploitation - whether I should explore more or focus on known resources
-3. Memory usage - how much I should trust my memories
-4. Social behavior - how I should interact with other Sparklings
+# Consider
+What instincts should you follow to optimize your survival?
 
+# Response Format
 Return your response in this JSON format:
 {
   "reasoning": "Detailed explanation of your reasoning...",
@@ -373,6 +369,9 @@ Return your response in this JSON format:
       }
       
       // Make the API request
+      const systemPrompt = `
+        You are the higher reasoning sub agent for a simple creature trying to survive. You have the opportunity to fine tune your base instincts. Only return JSON.
+      `;
       const response = await fetch(endpoint, {
         method: 'POST',
         headers,
@@ -380,7 +379,7 @@ Return your response in this JSON format:
           model: this.apiConfig.model,
           max_tokens: this.apiConfig.maxTokens,
           temperature: this.apiConfig.temperature,
-          system: "You are a decision system for a simulated entity called a Sparkling. Respond only with valid JSON that contains 'reasoning' (string) and 'parameters' (object).",
+          system: systemPrompt, //"You are a decision system for a simulated entity called a Sparkling. Respond only with valid JSON that contains 'reasoning' (string) and 'parameters' (object).",
           messages: [{ role: 'user', content: prompt }]
         })
       });
