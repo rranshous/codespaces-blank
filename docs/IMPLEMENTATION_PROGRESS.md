@@ -127,6 +127,14 @@ This document tracks our progress in implementing the Sparklings Neural Energy S
 
 ## Recent Updates (April 17, 2025)
 
+### Food Consumption Rate Adjustments
+- Reduced the base food consumption rate from 1.0 to 0.5 units per second (75% reduction from original 2.0)
+- Lowered the movement food cost from 0.2 to 0.1 units per second (80% reduction from original 0.5)
+- Combined effect reduces overall food consumption by about 75%, making Sparklings less likely to starve
+- Maintained the neural energy starvation mechanic (critical hunger still causes neural energy loss)
+- These changes allow Sparklings to maintain their food levels for much longer periods
+- Better balance between food collection and neural energy acquisition activities
+
 ### Neural Energy Consumption Modification
 - Modified neural energy consumption to only occur during the "thinking" phase of inference
 - Removed continuous passive neural energy decay when Sparklings are in non-inference states

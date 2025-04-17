@@ -73,7 +73,7 @@ export class Sparkling {
       maxNeuralEnergy: config.sparklingMaxNeuralEnergy,
       speed: config.sparklingSpeed,
       sensorRadius: config.gridCellSize * 3, // Can sense 3 cells away
-      foodConsumptionRate: 1, // Reduced from 2 to 1 unit per second
+      foodConsumptionRate: 0.5, // Reduced from 1.0 to 0.5 unit per second
       neuralEnergyConsumptionRate: 1, // Units per second
       collectionRate: 10 // Units per second
     };
@@ -263,8 +263,8 @@ export class Sparkling {
     
     // Extra food consumption during movement
     if (this.state !== SparklingState.IDLE && this.state !== SparklingState.RESTING) {
-      // Movement costs extra food - reduced from 0.5 to 0.2
-      const movementCost = 0.2 * deltaTime;
+      // Movement costs extra food - reduced from 0.2 to 0.1
+      const movementCost = 0.1 * deltaTime;
       this.food = Math.max(0, this.food - movementCost);
     }
     
