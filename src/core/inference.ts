@@ -173,10 +173,10 @@ export class InferenceSystem {
     
     // Create the prompt
     const prompt = `
-    # Your Current Status:
-    - State: ${state}
-    - Food: ${resourceLevels.food.toFixed(1)}/${maxLevels.maxFood} (${((resourceLevels.food / maxLevels.maxFood) * 100).toFixed(1)}%)
-    - Neural Energy: ${resourceLevels.neuralEnergy.toFixed(1)}/${maxLevels.maxNeuralEnergy} (${((resourceLevels.neuralEnergy / maxLevels.maxNeuralEnergy) * 100).toFixed(1)}%)
+# Your Current Status:
+- State: ${state}
+- Food: ${resourceLevels.food.toFixed(1)}/${maxLevels.maxFood} (${((resourceLevels.food / maxLevels.maxFood) * 100).toFixed(1)}%)
+- Neural Energy: ${resourceLevels.neuralEnergy.toFixed(1)}/${maxLevels.maxNeuralEnergy} (${((resourceLevels.neuralEnergy / maxLevels.maxNeuralEnergy) * 100).toFixed(1)}%)
 
 # Your Memories
 ## Food Found
@@ -222,15 +222,30 @@ ${formatInferenceMemories(inferenceMemories)}
 What instincts should you follow to optimize your survival?
 
 # Response Format
-Return your response in this JSON format:
+Return your response in this JSON format with camelCase parameter names:
 {
   "reasoning": "Detailed explanation of your reasoning...",
   "parameters": {
-    "paramName1": newValue1,
-    "paramName2": newValue2,
-    ...
+    "resourcePreference": number,  // Must use camelCase for parameter names
+    "hungerThreshold": number,
+    "criticalHungerThreshold": number,
+    "foodSatiationThreshold": number,
+    "energyLowThreshold": number,
+    "criticalEnergyThreshold": number,
+    "energySatiationThreshold": number,
+    "collectionEfficiency": number,
+    "explorationRange": number,
+    "explorationDuration": number,
+    "restDuration": number,
+    "memoryTrustFactor": number,
+    "noveltyPreference": number,
+    "persistenceFactor": number,
+    "cooperationTendency": number,
+    "personalSpaceFactor": number
   }
 }
+
+IMPORTANT: All parameter names must use camelCase (e.g., "resourcePreference", not "Resource Preference").
 `;
     
     return prompt;
@@ -379,7 +394,7 @@ Return your response in this JSON format:
           model: this.apiConfig.model,
           max_tokens: this.apiConfig.maxTokens,
           temperature: this.apiConfig.temperature,
-          system: systemPrompt, //"You are a decision system for a simulated entity called a Sparkling. Respond only with valid JSON that contains 'reasoning' (string) and 'parameters' (object).",
+          system: systemPrompt, 
           messages: [{ role: 'user', content: prompt }]
         })
       });
@@ -405,7 +420,14 @@ Return your response in this JSON format:
       
       try {
         // Extract the text content from the response
-        const content = data.content.find(c => c.type === 'text')?.text || '';
+        // Find the text content in the content array
+        const textContent = data.content.find(item => item.type === 'text' && item.text);
+        
+        if (!textContent || !textContent.text) {
+          throw new Error("No text content found in the response");
+        }
+        
+        const content = textContent.text;
         
         // Try to extract the JSON part from the response
         const jsonMatch = content.match(/\{[\s\S]*\}/);
@@ -419,21 +441,38 @@ Return your response in this JSON format:
           throw new Error("Response JSON missing required fields");
         }
         
+        // Convert parameter names from title case to camelCase
+        const convertedParameters: Partial<DecisionParameters> = {};
+        if (jsonResponse.parameters) {
+          Object.entries(jsonResponse.parameters).forEach(([key, value]) => {
+            // Convert "Resource Preference" to "resourcePreference", etc.
+            const camelCaseKey = this.convertToCamelCase(key);
+            
+            // Map known parameter names if direct match not found
+            const mappedKey = this.mapParameterNameToCamelCase(camelCaseKey);
+            
+            if (mappedKey && typeof value === 'number') {
+              convertedParameters[mappedKey as keyof DecisionParameters] = value;
+            }
+          });
+        }
+        
         // Create a summary of parameter changes
-        const parameterChangeSummary = Object.entries(jsonResponse.parameters)
+        const parameterChangeSummary = Object.entries(convertedParameters)
           .map(([key, value]) => `${key}: ${value}`)
           .join(", ");
         
         this.inferenceQualityMetrics.successfulInferences++;
         
         return {
-          updatedParameters: jsonResponse.parameters,
+          updatedParameters: convertedParameters,
           reasoning: jsonResponse.reasoning,
           parameterChangeSummary,
           success: true
         };
       } catch (error) {
         console.error("Error parsing API response:", error);
+        console.error("Raw response:", data);
         this.inferenceQualityMetrics.failedInferences++;
         return {
           updatedParameters: {},
@@ -452,6 +491,44 @@ Return your response in this JSON format:
         success: false
       };
     }
+  }
+  
+  /**
+   * Convert a string from title case or other formats to camelCase
+   */
+  private convertToCamelCase(input: string): string {
+    // Convert "Resource Preference" to "resourcePreference"
+    return input
+      .replace(/\s(.)/g, match => match.trim().toUpperCase()) // Convert "X Y" to "XY"
+      .replace(/^(.)/, match => match.toLowerCase()); // Convert first char to lowercase
+  }
+
+  /**
+   * Map parameter names from various formats to the correct camelCase format
+   */
+  private mapParameterNameToCamelCase(key: string): keyof DecisionParameters | null {
+    // Direct mapping for common variations
+    const parameterMap: Record<string, keyof DecisionParameters> = {
+      // Title case to camelCase mappings
+      'resourcePreference': 'resourcePreference',
+      'hungerThreshold': 'hungerThreshold',
+      'criticalHungerThreshold': 'criticalHungerThreshold',
+      'foodSatiationThreshold': 'foodSatiationThreshold',
+      'energyLowThreshold': 'energyLowThreshold',
+      'criticalEnergyThreshold': 'criticalEnergyThreshold',
+      'energySatiationThreshold': 'energySatiationThreshold',
+      'collectionEfficiency': 'collectionEfficiency',
+      'explorationRange': 'explorationRange',
+      'explorationDuration': 'explorationDuration',
+      'restDuration': 'restDuration',
+      'memoryTrustFactor': 'memoryTrustFactor',
+      'noveltyPreference': 'noveltyPreference',
+      'persistenceFactor': 'persistenceFactor',
+      'cooperationTendency': 'cooperationTendency',
+      'personalSpaceFactor': 'personalSpaceFactor',
+    };
+
+    return parameterMap[key] || null;
   }
   
   /**

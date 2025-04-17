@@ -125,7 +125,18 @@ This document tracks our progress in implementing the Sparklings Neural Energy S
 - [ ] User interaction with Sparklings and environment
 - [ ] Server-side persistence for long-running simulations
 
-## Recent Updates (April 16, 2025)
+## Recent Updates (April 17, 2025)
+
+### Inference System Bug Fixes and Improvements
+- Fixed Anthropic API response handling to correctly extract text content from structured response
+- Added support for converting parameter names from title case (e.g., "Resource Preference") to camelCase (e.g., "resourcePreference")
+- Updated the prompt to explicitly request camelCase parameter names in the response
+- Improved error handling and logging when processing API responses
+- Added helper methods for parameter name conversion and mapping
+- Enhanced debugging information with raw response logging for troubleshooting
+- Fixed issues with parameter validation to ensure proper typing
+- Updated the system prompt for more accurate inference results
+- Structured the example response format in the prompt for better model guidance
 
 ### UI and Visualization Improvements 
 - Renamed "Toggle Debug View" button to "Toggle Visualization Details" for clarity
@@ -158,11 +169,3 @@ This document tracks our progress in implementing the Sparklings Neural Energy S
 - Added rate limiting to API endpoints to prevent abuse
 - Enhanced error handling in proxy server with detailed error messages
 - Added health check endpoint for monitoring server status
-
-### Documentation Updates
-- Updated implementation progress to mark Backend Proxy milestone as complete
-- Marked Enhanced Visualization and UI Controls & Information milestones as complete
-- Marked Debugging & Analysis Tools milestone as complete
-- Updated phase status - Phase 2 complete, Phase 3 in progress
-- Added detailed notes about recent visualization and inference improvements
-- Documented the "Home" dots functionality in the visualization legend
