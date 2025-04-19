@@ -17,13 +17,16 @@ This document outlines the implementation strategy for Version 2 of the Sparklin
 
 ### Phase 2: Sparkling Lifecycle Mechanics (2 weeks)
 
-#### Milestone 2.1: Energy Monitoring & Visualization (1 week)
-- Improve visualization of existing energy consumption mechanics
-- Create clear visual indicators for low energy states
-- Create tooltip enhancements for energy monitoring
+#### Milestone 2.1: Food Monitoring & Visualization (1 week)
+- Improve visualization of existing food consumption mechanics
+- Create clear visual indicators for low food states
+- Create tooltip enhancements for food level monitoring
+- Add improved UI elements for tracking food resources
+- Enhance visibility of food-related Sparkling behaviors
 
 #### Milestone 2.2: Fadeout & New Sparkling Mechanics (1 week)
-- Implement gradual fadeout process when energy is depleted
+- Enhance existing food and neural energy consumption relationship
+- Implement gradual fadeout process when both food and neural energy are depleted
 - Create visual effects for Sparkling fadeout
 - Add fadeout memory for other Sparklings (remembering where a Sparkling faded)
 - Implement mechanics for new Sparklings to appear

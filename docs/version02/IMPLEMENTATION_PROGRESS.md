@@ -17,17 +17,20 @@ This document tracks the implementation progress of Version 2 features for the S
 
 ## Phase 2: Sparkling Lifecycle Mechanics
 
-### Milestone 2.1: Energy Monitoring & Visualization
-- [ ] Improved visualization of existing energy consumption
-- [ ] Clear visual indicators for low energy states
-- [ ] Tooltip enhancements for energy monitoring
+### Milestone 2.1: Food Monitoring & Visualization
+- [ ] Improved visualization of existing food consumption mechanics
+- [ ] Clear visual indicators for low food states
+- [ ] Tooltip enhancements for food level monitoring
+- [ ] Improved UI elements for tracking food resources
+- [ ] Enhanced visibility of food-related behaviors
 
 **Status**: Not started
 **Expected Completion**: TBD
-**Notes**: 
+**Notes**: This milestone focuses on enhancing the visualization and monitoring of existing food mechanics. Food gathering and consumption behaviors are already implemented in the simulation.
 
 ### Milestone 2.2: Fadeout & New Sparkling Mechanics
-- [ ] Gradual fadeout process
+- [ ] Enhancement of existing food and neural energy relationship
+- [ ] Gradual fadeout process when both food and neural energy are depleted
 - [ ] Fadeout visual effects
 - [ ] Fadeout memory for other Sparklings
 - [ ] New Sparkling introduction mechanics
@@ -35,7 +38,7 @@ This document tracks the implementation progress of Version 2 features for the S
 
 **Status**: Not started
 **Expected Completion**: TBD
-**Notes**: 
+**Notes**: The basic relationship between food depletion and neural energy consumption is already implemented. This milestone focuses on enhancing this relationship and adding the fadeout mechanics when both resources are depleted.
 
 ## Phase 3: Enhanced Visualization & Analytics
 
