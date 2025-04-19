@@ -273,7 +273,7 @@ export class Renderer {
   /**
    * Draw debug information on the canvas
    */
-  public drawDebugInfo(fps: number, world?: World, inferenceSystem?: any): void {
+  public drawDebugInfo(fps: number, world?: World, inferenceSystem?: any, speedMultiplier?: number): void {
     this.context.fillStyle = 'white';
     this.context.font = '12px Arial';
     this.context.textAlign = 'right';
@@ -286,6 +286,14 @@ export class Renderer {
     
     this.context.fillText(`FPS: ${Math.round(fps)}`, rightEdge, y);
     y += 20;
+    
+    // Show simulation speed if provided
+    if (speedMultiplier !== undefined) {
+      this.context.fillStyle = speedMultiplier > 1 ? 'rgba(255, 152, 0, 0.9)' : 'white';
+      this.context.fillText(`Speed: ${speedMultiplier}x`, rightEdge, y);
+      y += 20;
+      this.context.fillStyle = 'white';
+    }
     
     if (world) {
       const dimensions = world.getDimensions();

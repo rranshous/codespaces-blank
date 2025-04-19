@@ -1,7 +1,7 @@
 import { SimulationConfig, getConfig } from '@config/config';
 import { AnthropicConfig, getAnthropicConfig, isApiConfigValid } from '@config/apiConfig';
 import { Renderer } from '@rendering/renderer';
-import { TimeManager } from '@utils/time';
+import { TimeManager, SimulationSpeed } from '@utils/time';
 import { World, WorldGenerationOptions } from '@core/world';
 import { Sparkling } from '@entities/sparkling';
 import { Position, SparklingState } from '@entities/sparklingTypes';
@@ -293,13 +293,62 @@ export class Simulation {
   }
 
   /**
+   * Set the simulation speed
+   * @param speed The simulation speed to set
+   */
+  public setSimulationSpeed(speed: SimulationSpeed): void {
+    this.timeManager.setSpeedMultiplier(speed);
+    
+    // Update the speed buttons to reflect the current selection
+    this.updateSpeedButtonStates(speed);
+    
+    console.log(`Simulation speed set to ${speed}x`);
+  }
+  
+  /**
+   * Update the speed button UI to reflect the current selected speed
+   */
+  private updateSpeedButtonStates(currentSpeed: SimulationSpeed): void {
+    const speedButtons = [
+      document.getElementById('speed-1x'),
+      document.getElementById('speed-2x'),
+      document.getElementById('speed-5x'),
+      document.getElementById('speed-10x')
+    ];
+    
+    speedButtons.forEach((button, index) => {
+      if (!button) return;
+      
+      // Clear all active classes
+      button.classList.remove('active');
+      
+      // Add active class to currently selected speed
+      const buttonSpeed = [
+        SimulationSpeed.NORMAL,
+        SimulationSpeed.DOUBLE,
+        SimulationSpeed.FAST,
+        SimulationSpeed.ULTRA
+      ][index];
+      
+      if (buttonSpeed === currentSpeed) {
+        button.classList.add('active');
+      }
+    });
+  }
+
+  /**
    * Main animation loop
    */
   private animationLoop(timestamp: number): void {
     this.timeManager.update(timestamp);
     
+    // Always update the simulation state
     this.update(this.timeManager.getDeltaTime());
-    this.render();
+    
+    // Only render if we're not skipping frames
+    if (!this.timeManager.shouldSkipFrame()) {
+      this.render();
+    }
     
     if (this.isRunning) {
       this.animationFrameId = requestAnimationFrame(this.animationLoop.bind(this));
@@ -408,7 +457,13 @@ export class Simulation {
     this.renderer.drawSparklings(this.sparklings, this.showDebug);
     
     // Pass the inference system to the renderer for debug info
-    this.renderer.drawDebugInfo(this.timeManager.getFPS(), this.world, this.inferenceSystem);
+    // Also pass the current speed multiplier to show in debug info
+    this.renderer.drawDebugInfo(
+      this.timeManager.getFPS(), 
+      this.world, 
+      this.inferenceSystem,
+      this.timeManager.getSpeedMultiplier()
+    );
   }
 
   /**
@@ -449,8 +504,58 @@ export class Simulation {
     runTestsButton.textContent = 'Run Inference Tests';
     runTestsButton.addEventListener('click', () => this.runInferenceTests());
     
+    // Create speed control container
+    const speedControlContainer = document.createElement('div');
+    speedControlContainer.id = 'speed-controls';
+    speedControlContainer.style.display = 'flex';
+    speedControlContainer.style.alignItems = 'center';
+    speedControlContainer.style.margin = '5px 0';
+    
+    // Create speed control label
+    const speedLabel = document.createElement('span');
+    speedLabel.textContent = 'Speed: ';
+    speedLabel.style.marginRight = '10px';
+    speedControlContainer.appendChild(speedLabel);
+    
+    // Create speed buttons
+    const speeds = [
+      { id: 'speed-1x', value: SimulationSpeed.NORMAL, label: '1x' },
+      { id: 'speed-2x', value: SimulationSpeed.DOUBLE, label: '2x' },
+      { id: 'speed-5x', value: SimulationSpeed.FAST, label: '5x' },
+      { id: 'speed-10x', value: SimulationSpeed.ULTRA, label: '10x' }
+    ];
+    
+    speeds.forEach(speed => {
+      const speedButton = document.createElement('button');
+      speedButton.id = speed.id;
+      speedButton.textContent = speed.label;
+      speedButton.className = 'speed-button';
+      speedButton.style.margin = '0 5px';
+      speedButton.style.padding = '3px 10px';
+      speedButton.style.cursor = 'pointer';
+      speedButton.addEventListener('click', () => this.setSimulationSpeed(speed.value));
+      
+      // Set the initial active state
+      if (speed.value === SimulationSpeed.NORMAL) {
+        speedButton.classList.add('active');
+      }
+      
+      speedControlContainer.appendChild(speedButton);
+    });
+    
+    // Add a bit of CSS for the active state
+    const style = document.createElement('style');
+    style.textContent = `
+      .speed-button.active {
+        background-color: #4CAF50;
+        color: white;
+      }
+    `;
+    document.head.appendChild(style);
+    
     const controlsDiv = document.getElementById('controls');
     if (controlsDiv) {
+      controlsDiv.appendChild(speedControlContainer);
       controlsDiv.appendChild(debugButton);
       controlsDiv.appendChild(inferenceToggleButton);
       controlsDiv.appendChild(proxyToggleButton);
