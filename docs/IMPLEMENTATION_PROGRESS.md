@@ -127,6 +127,15 @@ This document tracks our progress in implementing the Sparklings Neural Energy S
 
 ## Recent Updates (April 19, 2025)
 
+### Documentation Additions ✅
+- Created comprehensive user-friendly guide (SIMULATION_GUIDE.md) at project root
+- Added detailed technical documentation (SIMULATION_FEATURES.md) in the docs folder
+- User guide explains simulation concepts in accessible language for end users
+- Technical documentation provides complete feature catalog for development reference
+- Both documents cover all major systems: World, Sparklings, Territories, Competition, etc.
+- These documents will be maintained alongside code development to stay current
+- This helps fulfill part of Milestone 5.2: Final Refinement (documentation)
+
 ### Competition & Territorial Mechanics Implementation ✅
 - Implemented competition mechanics for resources between Sparklings
 - Added competition penalties that temporarily reduce collection efficiency when a Sparkling loses in competition
