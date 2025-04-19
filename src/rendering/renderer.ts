@@ -1,6 +1,8 @@
 import { SimulationConfig } from '@config/config';
 import { World } from '@core/world';
 import { GridCell, TERRAIN_PROPERTIES } from '@core/terrain';
+import { Sparkling } from '@entities/sparkling';
+import { SparklingState, Position } from '@entities/sparklingTypes';
 
 /**
  * Responsible for rendering the simulation to a canvas
@@ -435,6 +437,174 @@ export class Renderer {
     // Reset text alignment for other text
     this.context.textAlign = 'left';
     this.context.fillStyle = 'white';
+  }
+
+  /**
+   * Draw sparklings and their territories
+   * @param sparklings Array of sparklings to draw
+   * @param showDetails Whether to show detailed information
+   */
+  public drawSparklings(sparklings: Sparkling[], showDetails: boolean = false): void {
+    const ctx = this.context;
+    
+    // First, draw territories (so they appear behind sparklings)
+    if (showDetails) {
+      for (const sparkling of sparklings) {
+        const territory = sparkling.getTerritory();
+        if (territory.center) {
+          // Get sparkling color to match territory color
+          const sparklingState = sparkling.getState();
+          // Only draw territory for specific states
+          if (sparklingState === SparklingState.COLLECTING || 
+              sparklingState === SparklingState.COMPETING || 
+              sparklingState === SparklingState.RESTING) {
+            
+            // Extract color components from the sparkling's color
+            const color = this.getSparklingColor(sparkling.getId());
+            
+            // Draw territory as a translucent circle
+            ctx.globalAlpha = 0.15;
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(territory.center.x, territory.center.y, territory.radius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw territory border
+            ctx.globalAlpha = 0.3;
+            ctx.strokeStyle = color;
+            ctx.beginPath();
+            ctx.arc(territory.center.x, territory.center.y, territory.radius, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // Reset opacity
+            ctx.globalAlpha = 1;
+          }
+        }
+      }
+    }
+    
+    // Draw interaction lines between competing sparklings
+    for (let i = 0; i < sparklings.length; i++) {
+      const sparklingA = sparklings[i];
+      const posA = sparklingA.getPosition();
+      const stateA = sparklingA.getState();
+      
+      for (let j = i + 1; j < sparklings.length; j++) {
+        const sparklingB = sparklings[j];
+        const posB = sparklingB.getPosition();
+        const stateB = sparklingB.getState();
+        
+        // Calculate distance between sparklings
+        const dx = posA.x - posB.x;
+        const dy = posA.y - posB.y;
+        const distanceSquared = dx * dx + dy * dy;
+        const distance = Math.sqrt(distanceSquared);
+        
+        // Draw line between competing sparklings
+        if (distance < 30) {
+          let interactionColor = 'rgba(200, 200, 200, 0.3)'; // Neutral interaction
+          let lineWidth = 1;
+          
+          // If both are competing, show competition interaction
+          if ((stateA === SparklingState.COMPETING && stateB === SparklingState.COLLECTING) ||
+              (stateA === SparklingState.COLLECTING && stateB === SparklingState.COMPETING) ||
+              (stateA === SparklingState.COMPETING && stateB === SparklingState.COMPETING)) {
+            
+            // Competition - red line
+            interactionColor = 'rgba(255, 50, 50, 0.6)';
+            lineWidth = 2;
+            
+            // Draw lightning bolt effect
+            ctx.strokeStyle = interactionColor;
+            ctx.lineWidth = lineWidth;
+            ctx.beginPath();
+            
+            const midX = (posA.x + posB.x) / 2;
+            const midY = (posA.y + posB.y) / 2;
+            const offsetX = (posB.y - posA.y) * 0.15;
+            const offsetY = (posA.x - posB.x) * 0.15;
+            
+            ctx.moveTo(posA.x, posA.y);
+            ctx.lineTo(midX + offsetX, midY + offsetY);
+            ctx.lineTo(midX - offsetX, midY - offsetY);
+            ctx.lineTo(posB.x, posB.y);
+            ctx.stroke();
+            
+            // Draw competition symbol
+            ctx.fillStyle = 'rgba(255, 50, 50, 0.8)';
+            ctx.beginPath();
+            ctx.arc(midX, midY, 4, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw crossed swords emoji
+            ctx.font = '12px Arial';
+            ctx.fillText('⚔️', midX - 6, midY - 6);
+          } 
+          // If one is in collecting state and the other isn't competing
+          else if ((stateA === SparklingState.COLLECTING && stateB !== SparklingState.COMPETING) ||
+                  (stateA !== SparklingState.COMPETING && stateB === SparklingState.COLLECTING)) {
+            
+            // Potential competition - yellow line
+            interactionColor = 'rgba(255, 200, 0, 0.4)';
+            lineWidth = 1;
+            
+            ctx.strokeStyle = interactionColor;
+            ctx.lineWidth = lineWidth;
+            ctx.setLineDash([3, 3]);
+            ctx.beginPath();
+            ctx.moveTo(posA.x, posA.y);
+            ctx.lineTo(posB.x, posB.y);
+            ctx.stroke();
+            ctx.setLineDash([]);
+          }
+          // If both collecting but not competing yet
+          else if (stateA === SparklingState.COLLECTING && stateB === SparklingState.COLLECTING) {
+            // Tension - orange line
+            interactionColor = 'rgba(255, 150, 0, 0.5)';
+            lineWidth = 1.5;
+            
+            ctx.strokeStyle = interactionColor;
+            ctx.lineWidth = lineWidth;
+            ctx.beginPath();
+            ctx.moveTo(posA.x, posA.y);
+            ctx.lineTo(posB.x, posB.y);
+            ctx.stroke();
+            
+            // Draw alert symbol
+            ctx.fillStyle = 'rgba(255, 150, 0, 0.7)';
+            const midX = (posA.x + posB.x) / 2;
+            const midY = (posA.y + posB.y) / 2;
+            ctx.font = '10px Arial';
+            ctx.fillText('⚠️', midX - 5, midY - 5);
+          }
+          // Basic encounter
+          else if (distance < 20) {
+            ctx.strokeStyle = interactionColor;
+            ctx.lineWidth = lineWidth;
+            ctx.setLineDash([2, 2]);
+            ctx.beginPath();
+            ctx.moveTo(posA.x, posA.y);
+            ctx.lineTo(posB.x, posB.y);
+            ctx.stroke();
+            ctx.setLineDash([]);
+          }
+        }
+      }
+    }
+    
+    // Then draw all sparklings
+    for (const sparkling of sparklings) {
+      sparkling.render(ctx, showDetails);
+    }
+  }
+  
+  /**
+   * Get a consistent color for a sparkling based on its ID
+   */
+  private getSparklingColor(id: number): string {
+    // Generate a bright, saturated color based on ID
+    const hue = (id * 137) % 360; // Use golden ratio approximation for good distribution
+    return `hsl(${hue}, 80%, 60%)`;
   }
 
   /**

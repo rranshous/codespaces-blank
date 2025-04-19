@@ -61,13 +61,13 @@ This document tracks our progress in implementing the Sparklings Neural Energy S
 
 ## Phase 3: Competition & Interaction (In Progress)
 
-### Milestone 3.1: Basic Interactions ⬜ (In Progress)
+### Milestone 3.1: Basic Interactions ✅
 - [x] Implement Sparkling-to-Sparkling detection
-- [ ] Create competition mechanics for resources
-- [ ] Develop simple territorial concepts
-- [ ] Add visualization for interactions
+- [x] Create competition mechanics for resources
+- [x] Develop simple territorial concepts
+- [x] Add visualization for interactions
 
-### Milestone 3.2: Advanced Competition ⬜
+### Milestone 3.2: Advanced Competition ⬜ (Next Priority)
 - [ ] Implement energy stealing mechanics
 - [ ] Create territorial advantages system
 - [ ] Develop danger representation and avoidance
@@ -127,6 +127,22 @@ This document tracks our progress in implementing the Sparklings Neural Energy S
 
 ## Recent Updates (April 19, 2025)
 
+### Competition & Territorial Mechanics Implementation ✅
+- Implemented competition mechanics for resources between Sparklings
+- Added competition penalties that temporarily reduce collection efficiency when a Sparkling loses in competition
+- Competition outcomes determined by parameters like collection efficiency and cooperation tendency
+- Developed a territorial system allowing Sparklings to establish territories around resource-rich areas
+- Territory size influenced by personal space preference and cooperation tendency
+- Added visualization of territories as translucent circles matching each Sparkling's color
+- Created visual effects for different interaction states (competition, potential competition, neutral)
+- Used color-coded connecting lines to display different interaction types
+- Added competition symbols (crossed swords) and warning symbols to highlight interaction types
+- Sparklings in COMPETING state now have visual indicators of their competitive encounters
+- Modified the renderer to support drawing all these new visual elements
+- Updated the Simulation class to process competition outcomes during Sparkling encounters
+- Less cooperative Sparklings tend to claim larger territories and compete more aggressively
+- This completes all tasks for Milestone 3.1: Basic Interactions
+
 ### Memory System Balance Improvements
 - Adjusted memory importance calculation to make food memories equally important as energy memories
 - Modified duplicate detection logic to use different distance thresholds for different resource types
@@ -168,3 +184,12 @@ This document tracks our progress in implementing the Sparklings Neural Energy S
 - Added sections for Code Architecture, Memory System, Inference System, Performance Optimization, Testing, and Documentation
 - This knowledge base will help prevent recurring issues and improve development processes
 - Lessons document will be updated regularly as new insights are discovered during development
+
+### Build Fixes (April 19, 2025)
+- Fixed missing imports in renderer.ts and simulation.ts files for SparklingState and Position types
+- Added the new COMPETING state to the SparklingState enum in sparklingTypes.ts
+- Implemented competition and territory properties and methods in the Sparkling class
+- Ensured that all visual elements are properly rendered
+- Successfully built the project with no errors
+- Milestone 3.1: Basic Interactions is now complete
+- Next priority is Milestone 3.2: Advanced Competition

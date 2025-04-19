@@ -4,7 +4,7 @@ import { Renderer } from '@rendering/renderer';
 import { TimeManager } from '@utils/time';
 import { World, WorldGenerationOptions } from '@core/world';
 import { Sparkling } from '@entities/sparkling';
-import { Position } from '@entities/sparklingTypes';
+import { Position, SparklingState } from '@entities/sparklingTypes';
 import { BehavioralProfile } from '@entities/decisionParameters';
 import { InferenceSystem } from '@core/inference';
 import { InferenceQualityTester } from '@core/inferenceQualityTester';
@@ -330,6 +330,7 @@ export class Simulation {
    */
   private checkSparklingEncounters(): void {
     const encounterRadius = 30; // Distance at which sparklings notice each other
+    const competitionRadius = 20; // Distance for resource competition
     
     for (let i = 0; i < this.sparklings.length; i++) {
       const sparklingA = this.sparklings[i];
@@ -346,10 +347,49 @@ export class Simulation {
         
         // If they're close enough, record the encounter
         if (distanceSquared < encounterRadius * encounterRadius) {
-          // For now, encounters are always neutral
-          // In future implementations, this could depend on competition or cooperation
-          sparklingA.recordEncounter(sparklingB, 'neutral');
-          sparklingB.recordEncounter(sparklingA, 'neutral');
+          // Determine the outcome of the encounter based on competition
+          let outcomeA: 'neutral' | 'positive' | 'negative' = 'neutral';
+          let outcomeB: 'neutral' | 'positive' | 'negative' = 'neutral';
+          
+          // Check if they're competing for resources
+          if (distanceSquared < competitionRadius * competitionRadius) {
+            // Both Sparklings are in collecting state - resource competition!
+            if (sparklingA.getState() === SparklingState.COLLECTING &&
+                sparklingB.getState() === SparklingState.COLLECTING) {
+              
+              // Compare their competition-related parameters
+              const paramsA = sparklingA.getParameters();
+              const paramsB = sparklingB.getParameters();
+              
+              // Calculate competition advantage (combination of relevant parameters)
+              const advantageA = paramsA.collectionEfficiency * (1 - paramsA.cooperationTendency);
+              const advantageB = paramsB.collectionEfficiency * (1 - paramsB.cooperationTendency);
+              
+              // The one with higher advantage gets a positive outcome, the other negative
+              if (advantageA > advantageB) {
+                outcomeA = 'positive';
+                outcomeB = 'negative';
+                // A wins the competition - reduce B's collection efficiency temporarily
+                sparklingB.setCompetitionPenalty(0.5, 5); // 50% penalty for 5 seconds
+              } else if (advantageB > advantageA) {
+                outcomeA = 'negative';
+                outcomeB = 'positive';
+                // B wins the competition - reduce A's collection efficiency temporarily
+                sparklingA.setCompetitionPenalty(0.5, 5); // 50% penalty for 5 seconds
+              } else {
+                // Equal advantage - both get slightly negative outcomes
+                outcomeA = 'negative';
+                outcomeB = 'negative';
+                // Both get a small penalty
+                sparklingA.setCompetitionPenalty(0.3, 3); // 30% penalty for 3 seconds
+                sparklingB.setCompetitionPenalty(0.3, 3); // 30% penalty for 3 seconds
+              }
+            }
+          }
+          
+          // Record encounter with appropriate outcome
+          sparklingA.recordEncounter(sparklingB, outcomeA);
+          sparklingB.recordEncounter(sparklingA, outcomeB);
         }
       }
     }
@@ -364,10 +404,8 @@ export class Simulation {
     // Draw the world (terrain and resources)
     this.renderer.drawWorld(this.world);
     
-    // Draw all sparklings
-    for (const sparkling of this.sparklings) {
-      sparkling.render(this.renderer.getContext(), this.showDebug);
-    }
+    // Draw all sparklings with territories and interactions
+    this.renderer.drawSparklings(this.sparklings, this.showDebug);
     
     // Pass the inference system to the renderer for debug info
     this.renderer.drawDebugInfo(this.timeManager.getFPS(), this.world, this.inferenceSystem);

@@ -45,6 +45,12 @@ export class Sparkling {
   private inferenceTimer: number = 0; // Timer for inference animation
   private lastInferenceReasoning: string = '';
   
+  // Competition & territory
+  private competitionPenalty: number = 0; // Penalty to collection efficiency from competition
+  private competitionTimer: number = 0; // Time remaining for the competition penalty
+  private territoryCenter: Position | null = null; // Center of the Sparkling's territory
+  private territoryRadius: number = 0; // Radius of the Sparkling's territory
+  
   /**
    * Create a new Sparkling
    */
@@ -125,6 +131,12 @@ export class Sparkling {
     
     // Check if we should trigger inference
     this.updateInferenceStatus(deltaTime);
+    
+    // Update competition penalties and state
+    this.updateCompetition(deltaTime);
+    
+    // Update territory
+    this.updateTerritory(world);
     
     // Make decisions based on current state and parameters
     this.updateState(world);
@@ -492,6 +504,10 @@ export class Sparkling {
           this.transitionToExploring();
         }
         break;
+        
+      case SparklingState.COMPETING:
+        // Competing state is managed by competition penalties
+        break;
     }
   }
   
@@ -670,9 +686,9 @@ export class Sparkling {
   private collectResources(world: World): void {
     if (this.state !== SparklingState.COLLECTING) return;
     
-    // Adjust collection amounts based on collection efficiency parameter
-    const foodToCollect = this.stats.collectionRate * this.stateTimer * this.parameters.collectionEfficiency;
-    const energyToCollect = this.stats.collectionRate * 0.5 * this.stateTimer * this.parameters.collectionEfficiency;
+    // Adjust collection amounts based on collection efficiency parameter and competition penalty
+    const foodToCollect = this.stats.collectionRate * this.stateTimer * this.parameters.collectionEfficiency * (1 - this.competitionPenalty);
+    const energyToCollect = this.stats.collectionRate * 0.5 * this.stateTimer * this.parameters.collectionEfficiency * (1 - this.competitionPenalty);
     
     // Determine what to collect based on resource preference
     let prioritizeFood = true;
@@ -773,6 +789,105 @@ export class Sparkling {
     }
     
     return collected;
+  }
+  
+  /**
+   * Set a competition penalty that temporarily reduces collection efficiency
+   * @param penalty Penalty factor (0-1 where 1 is a 100% reduction)
+   * @param duration Duration of the penalty in seconds
+   */
+  public setCompetitionPenalty(penalty: number, duration: number): void {
+    this.competitionPenalty = Math.min(1, Math.max(0, penalty)); // Clamp between 0-1
+    this.competitionTimer = duration;
+    
+    // If the penalty is significant, transition to competing state
+    if (this.competitionPenalty > 0.3 && this.state === SparklingState.COLLECTING) {
+      this.state = SparklingState.COMPETING;
+      this.stateTimer = 0;
+    }
+  }
+  
+  /**
+   * Update competition state and penalties
+   * @param deltaTime Time elapsed since last update
+   */
+  private updateCompetition(deltaTime: number): void {
+    // Update competition timer
+    if (this.competitionTimer > 0) {
+      this.competitionTimer -= deltaTime;
+      
+      // If timer expires, clear the penalty
+      if (this.competitionTimer <= 0) {
+        this.competitionPenalty = 0;
+        this.competitionTimer = 0;
+        
+        // If we were in competing state, go back to collecting
+        if (this.state === SparklingState.COMPETING) {
+          this.state = SparklingState.COLLECTING;
+          this.stateTimer = 0;
+        }
+      }
+    }
+  }
+  
+  /**
+   * Check if the Sparkling has a territory and establish one if appropriate
+   * @param world The current world
+   */
+  private updateTerritory(world: World): void {
+    // Only establish a territory when we have enough resources and are collecting
+    const foodRatio = this.food / this.stats.maxFood;
+    
+    // Sparklings establish territories around resource-rich areas they've found
+    if (this.state === SparklingState.COLLECTING && foodRatio > this.parameters.foodSatiationThreshold * 0.8) {
+      // If we don't have a territory yet or we're far from our current territory
+      if (!this.territoryCenter || 
+          this.distanceToPoint(this.territoryCenter) > this.territoryRadius * 1.5) {
+        
+        // Establish a new territory centered on the current position
+        this.territoryCenter = { ...this.position };
+        
+        // Territory radius is influenced by personal space preference and cooperation tendency
+        // Less cooperative Sparklings claim larger territories
+        this.territoryRadius = this.parameters.personalSpaceFactor * 
+                             (2.0 - this.parameters.cooperationTendency) * 5;
+        
+        // Remember this location as a home position
+        this.homePosition = { ...this.position };
+      }
+    }
+  }
+  
+  /**
+   * Calculate the distance to a point
+   */
+  private distanceToPoint(point: Position): number {
+    const dx = this.position.x - point.x;
+    const dy = this.position.y - point.y;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+  
+  /**
+   * Check if a point is within this Sparkling's territory
+   */
+  public isPointInTerritory(point: Position): boolean {
+    if (!this.territoryCenter) return false;
+    
+    const dx = point.x - this.territoryCenter.x;
+    const dy = point.y - this.territoryCenter.y;
+    const distanceSquared = dx * dx + dy * dy;
+    
+    return distanceSquared < this.territoryRadius * this.territoryRadius;
+  }
+  
+  /**
+   * Get the territory center and radius
+   */
+  public getTerritory(): { center: Position | null, radius: number } {
+    return {
+      center: this.territoryCenter ? { ...this.territoryCenter } : null,
+      radius: this.territoryRadius
+    };
   }
   
   /**
@@ -1223,6 +1338,7 @@ export class Sparkling {
       case SparklingState.SEEKING_ENERGY: return "low energy";
       case SparklingState.COLLECTING: return "collecting";
       case SparklingState.RESTING: return "resting";
+      case SparklingState.COMPETING: return "competing";
       default: return "";
     }
   }
