@@ -125,78 +125,32 @@ This document tracks our progress in implementing the Sparklings Neural Energy S
 - [ ] User interaction with Sparklings and environment
 - [ ] Server-side persistence for long-running simulations
 
-## Recent Updates (April 17, 2025)
+## Recent Updates (April 19, 2025)
 
-### Configurable Inference Parameters
-- Added configurable inference threshold and interval parameters to the DecisionParameters interface
-- Modified the Sparkling class to use these parameters instead of hard-coded values
-- Updated inference system to include these parameters in the prompt and parse them from responses
-- Enhanced the mockInference function to dynamically adjust these parameters based on situation
-- Updated all inference tests to include the new parameters in their test cases
-- Parameters allow for dynamic adjustment of when inference occurs based on energy levels and situation
-- Higher energy/food abundance leads to lower thresholds and intervals for more frequent thinking
-- Lower energy/food scarcity leads to higher thresholds and intervals to conserve resources
+### Memory System Balance Improvements
+- Adjusted memory importance calculation to make food memories equally important as energy memories
+- Modified duplicate detection logic to use different distance thresholds for different resource types
+- Food locations now use a smaller distance threshold (15 units vs 20 units) for duplicate detection
+- This allows Sparklings to maintain more distinct food locations in memory
+- Balances the typical ratio of food vs energy locations in Sparkling memory
+- Prevents the previous issue where Sparklings would have many energy locations but few food locations
+- Better reflects the actual resource distribution in the world
+- Improves decision-making especially for hungry Sparklings who need to find food sources
 
-### Food Consumption Rate Adjustments
-- Reduced the base food consumption rate from 1.0 to 0.5 units per second (75% reduction from original 2.0)
-- Lowered the movement food cost from 0.2 to 0.1 units per second (80% reduction from original 0.5)
-- Combined effect reduces overall food consumption by about 75%, making Sparklings less likely to starve
-- Maintained the neural energy starvation mechanic (critical hunger still causes neural energy loss)
-- These changes allow Sparklings to maintain their food levels for much longer periods
-- Better balance between food collection and neural energy acquisition activities
+### Memory Importance Parameters Integration
+- Fixed issues with memory importance parameters not being properly passed between components
+- Modified Sparkling constructor to pass foodMemoryImportance and energyMemoryImportance to Memory
+- Updated the updateParameters method to synchronize Memory's importance values when parameters change
+- This allows each Sparkling to maintain its own memory importance preferences
+- Gatherer profile Sparklings (high food memory importance) now properly remember food locations better
+- Energy Seeker profile Sparklings (high energy memory importance) now properly remember energy locations better
+- The memory system now correctly applies the individual importance multipliers to calculate memory retention
+- More important memories will be retained longer during memory pruning
+- Memory importance parameters also affect how the inference system utilizes memories in decision-making
 
-### Neural Energy Consumption Modification
-- Modified neural energy consumption to only occur during the "thinking" phase of inference
-- Removed continuous passive neural energy decay when Sparklings are in non-inference states
-- Maintained the energy cost during starvation (critical hunger still causes neural energy loss)
-- Preserved the one-time neural energy cost (30 units) when starting inference
-- Energy is now a permanent resource that only depletes during active "thinking" or starvation
-- This change allows Sparklings to collect and store neural energy for longer periods
-
-### Inference System Bug Fixes and Improvements
-- Fixed Anthropic API response handling to correctly extract text content from structured response
-- Improved JSON parsing with robust sanitization to handle control characters in responses
-- Simplified parameter name handling by removing the unnecessary mapping function
-- Added a fallback parsing mechanism for malformed but recoverable JSON responses
-- Enhanced error logging and diagnostics for API response issues
-- Implemented a JSON sanitizer to properly handle escaped characters and control codes
-- Added a validation system for parameter names to ensure only valid parameters are processed
-- Fixed the SyntaxError issue related to bad control characters in JSON responses
-- Made the response processing more resilient to variations in the API response format
-- Improved type checking and error handling throughout the inference pipeline
-
-### UI and Visualization Improvements 
-- Renamed "Toggle Debug View" button to "Toggle Visualization Details" for clarity
-- Enhanced debug information panel with structured section headers
-- Added color-coded inference metrics with success/failure indicators
-- Implemented detailed inference history display with timestamps and reasoning snippets
-- Added legend explaining visualization elements (home points, memory markers, inference locations)
-- Added simulation time display to the debug view with minutes and seconds format
-- Enhanced success rate display with color-coding based on performance level
-- Improved inference metrics section with visual organization for better readability
-- Added interactive hover tooltip with detailed Sparkling information
-- Enhanced neural energy visualization with clearer threshold indicators
-- Implemented dotted circle animation for Sparklings approaching inference threshold
-- Added "inference ready" text indicator for Sparklings that can trigger inference
-
-### Inference System Improvements
-- Fixed inference execution workflow to properly handle state transitions
-- Improved error handling in the performInference method with proper typing
-- Enhanced error display for inference failures with detailed messages
-- Added safety check for getCurrentTime method to prevent runtime errors
-- Fixed state transition issue where Sparklings could get stuck in waiting state
-- Ensured proper transition to PROCESSING state after API calls complete or fail
-- Implemented more robust error handling for network errors during inference
-- Modified inference tests to use current inference mode (mock or API) instead of always forcing mock mode
-
-### Server and API Improvements
-- Enhanced CORS configuration to support cross-domain requests in GitHub Codespaces environment
-- Added support for OPTIONS preflight requests required for cross-origin API calls
-- Expanded allowed HTTP methods to include GET, POST, and OPTIONS
-- Added support for credentials and additional headers in CORS configuration
-- Improved server logging to show CORS status on startup
-- Replaced standard CORS package with custom middleware for better control over response headers
-- Implemented dynamic origin detection to automatically allow GitHub Codespaces domains
-- Added rate limiting to API endpoints to prevent abuse
-- Enhanced error handling in proxy server with detailed error messages
-- Added health check endpoint for monitoring server status
+### Documentation Improvements
+- Created a new LESSONS.md document to capture development lessons and best practices
+- Documented the lesson about updating parameter-related code in multiple places when adding new parameters
+- Added sections for Code Architecture, Memory System, Inference System, Performance Optimization, Testing, and Documentation
+- This knowledge base will help prevent recurring issues and improve development processes
+- Lessons document will be updated regularly as new insights are discovered during development

@@ -10,9 +10,17 @@ export class Memory {
   private entries: MemoryEntry[] = [];
   private capacity: number;
   private currentTime: number = 0;
+  private foodMemoryImportance: number = 0.5;
+  private energyMemoryImportance: number = 0.5;
   
-  constructor(config: SimulationConfig) {
+  constructor(
+    config: SimulationConfig, 
+    foodMemoryImportance: number = 0.5, 
+    energyMemoryImportance: number = 0.5
+  ) {
     this.capacity = config.memorySize;
+    this.foodMemoryImportance = foodMemoryImportance;
+    this.energyMemoryImportance = energyMemoryImportance;
   }
   
   /**
@@ -151,6 +159,15 @@ export class Memory {
   }
   
   /**
+   * Update the memory importance parameters
+   * This should be called when the Sparkling's decision parameters change
+   */
+  public updateMemoryImportance(foodImportance: number, energyImportance: number): void {
+    this.foodMemoryImportance = foodImportance;
+    this.energyMemoryImportance = energyImportance;
+  }
+  
+  /**
    * Get all memory entries
    */
   public getAllMemories(): MemoryEntry[] {
@@ -228,8 +245,19 @@ export class Memory {
       // If the same type and very close position
       if (existingEntry.type === entry.type) {
         const distance = this.calculateDistanceSquared(existingEntry.position, entry.position);
-        // If positions are very close
-        if (distance < 400) { // 20 units squared
+        
+        // Different distance thresholds for different memory types
+        let distanceThreshold = 400; // Default: 20 units squared for most memory types
+        
+        // For food resources, use a smaller distance threshold to allow more memories
+        if (entry.type === MemoryEventType.RESOURCE_FOUND) {
+          distanceThreshold = 225; // 15 units squared - more granular food tracking
+        } else if (entry.type === MemoryEventType.ENERGY_FOUND) {
+          distanceThreshold = 400; // 20 units squared - original behavior for energy
+        }
+        
+        // If positions are very close (using appropriate threshold)
+        if (distance < distanceThreshold) {
           // For resource/energy memories, also check if they're the same state (found/depleted)
           if ((entry.type === MemoryEventType.RESOURCE_FOUND || 
                entry.type === MemoryEventType.RESOURCE_DEPLETED) &&
@@ -293,16 +321,20 @@ export class Memory {
    * Calculate importance for resource memories
    */
   private calculateResourceImportance(amount: number): number {
-    // More resources = more important
-    return Math.min(0.3 + (amount / 50) * 0.6, 0.9);
+    // Scale the base importance by the Sparkling's food memory importance parameter
+    const baseImportance = 0.3 + (amount / 50) * 0.4;
+    // Apply the individual importance multiplier (allowing up to 95% maximum importance)
+    return Math.min(baseImportance * (1 + this.foodMemoryImportance), 0.95);
   }
-  
+
   /**
    * Calculate importance for energy memories
    */
   private calculateEnergyImportance(amount: number): number {
-    // Energy is generally more valuable than food
-    return Math.min(0.5 + (amount / 20) * 0.4, 0.95);
+    // Scale the base importance by the Sparkling's energy memory importance parameter
+    const baseImportance = 0.3 + (amount / 20) * 0.4;
+    // Apply the individual importance multiplier (allowing up to 95% maximum importance)
+    return Math.min(baseImportance * (1 + this.energyMemoryImportance), 0.95);
   }
   
   /**

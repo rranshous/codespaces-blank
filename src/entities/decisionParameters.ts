@@ -36,6 +36,10 @@ export interface DecisionParameters {
   persistenceFactor: number;       // 0-1, how persistent the Sparkling is in following a goal
   cooperationTendency: number;     // 0-1, tendency to cooperate with other Sparklings
   
+  // Memory importance parameters
+  foodMemoryImportance: number;    // 0-1, how important food memories are to this Sparkling 
+  energyMemoryImportance: number;  // 0-1, how important energy memories are to this Sparkling
+  
   // Inference parameters
   inferenceThreshold: number;      // Neural energy level required to trigger inference
   inferenceInterval: number;       // Minimum time in seconds between inference operations

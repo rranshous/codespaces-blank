@@ -219,6 +219,8 @@ ${formatInferenceMemories(inferenceMemories)}
 - Personal Space Factor: ${currentParameters.personalSpaceFactor.toFixed(0)} (preferred distance from others)
 - Inference Threshold: ${currentParameters.inferenceThreshold.toFixed(0)} (neural energy threshold to trigger inference)
 - Inference Interval: ${currentParameters.inferenceInterval.toFixed(0)} (seconds between inference attempts)
+- Food Memory Importance: ${currentParameters.foodMemoryImportance.toFixed(2)} (importance of food memories for retention)
+- Energy Memory Importance: ${currentParameters.energyMemoryImportance.toFixed(2)} (importance of energy memories for retention)
 
 # Consider
 What instincts should you follow to optimize your survival?
@@ -245,7 +247,9 @@ Return your response in this JSON format with camelCase parameter names:
     "cooperationTendency": number,
     "personalSpaceFactor": number,
     "inferenceThreshold": number,
-    "inferenceInterval": number
+    "inferenceInterval": number,
+    "foodMemoryImportance": number,
+    "energyMemoryImportance": number
   }
 }
 
@@ -624,13 +628,15 @@ IMPORTANT: All parameter names must use camelCase (e.g., "resourcePreference", n
       'explorationRange',
       'explorationDuration',
       'restDuration',
+      'personalSpaceFactor',
       'memoryTrustFactor',
       'noveltyPreference',
       'persistenceFactor',
       'cooperationTendency',
-      'personalSpaceFactor',
       'inferenceThreshold',
-      'inferenceInterval'
+      'inferenceInterval',
+      'foodMemoryImportance',
+      'energyMemoryImportance'
     ];
     
     return validParameterNames.includes(name);
@@ -717,7 +723,9 @@ IMPORTANT: All parameter names must use camelCase (e.g., "resourcePreference", n
       persistenceFactor: [0, 1],
       cooperationTendency: [0, 1],
       inferenceThreshold: [50, 100],
-      inferenceInterval: [10, 30]
+      inferenceInterval: [10, 30],
+      foodMemoryImportance: [0, 1],
+      energyMemoryImportance: [0, 1]
     };
     
     // Validate each parameter

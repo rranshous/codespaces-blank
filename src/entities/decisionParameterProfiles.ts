@@ -26,6 +26,10 @@ const DEFAULT_PARAMETERS: DecisionParameters = {
   persistenceFactor: 0.4,        // Moderate persistence
   cooperationTendency: 0.5,      // Neutral cooperation tendency
   
+  // Memory importance parameters
+  foodMemoryImportance: 0.5,     // Balanced importance for food memories
+  energyMemoryImportance: 0.5,   // Balanced importance for energy memories
+  
   // Inference parameters
   inferenceThreshold: 70,        // Default neural energy threshold for inference
   inferenceInterval: 15          // Default minimum time between inferences
@@ -48,6 +52,8 @@ export function generateParametersForProfile(profile: BehavioralProfile): Decisi
       params.noveltyPreference = 0.85;        // Strong preference for novelty
       params.memoryTrustFactor = 0.5;         // Less reliance on memory
       params.persistenceFactor = 0.2;         // Lower persistence (changes direction more)
+      params.foodMemoryImportance = 0.4;      // Lower importance for food memories
+      params.energyMemoryImportance = 0.6;    // Slightly higher importance for energy memories
       break;
       
     case BehavioralProfile.GATHERER:
@@ -59,6 +65,8 @@ export function generateParametersForProfile(profile: BehavioralProfile): Decisi
       params.collectionEfficiency = 1.3;      // More efficient at collecting
       params.memoryTrustFactor = 0.8;         // Higher memory trust
       params.persistenceFactor = 0.7;         // Higher persistence in tasks
+      params.foodMemoryImportance = 0.9;      // Very high importance for food memories
+      params.energyMemoryImportance = 0.3;    // Lower importance for energy memories
       break;
       
     case BehavioralProfile.ENERGY_SEEKER:
@@ -70,6 +78,8 @@ export function generateParametersForProfile(profile: BehavioralProfile): Decisi
       params.collectionEfficiency = 1.3;      // More efficient at collecting
       params.memoryTrustFactor = 0.8;         // Higher memory trust
       params.persistenceFactor = 0.7;         // Higher persistence in tasks
+      params.foodMemoryImportance = 0.3;      // Lower importance for food memories
+      params.energyMemoryImportance = 0.9;    // Very high importance for energy memories
       break;
       
     case BehavioralProfile.SOCIAL:
@@ -79,6 +89,8 @@ export function generateParametersForProfile(profile: BehavioralProfile): Decisi
       params.explorationRange = 150;          // Smaller exploration range (stay closer to group)
       params.memoryTrustFactor = 0.8;         // Higher memory trust
       params.persistenceFactor = 0.5;         // Moderate persistence
+      params.foodMemoryImportance = 0.6;      // Moderate importance for food memories
+      params.energyMemoryImportance = 0.6;    // Moderate importance for energy memories
       break;
       
     case BehavioralProfile.CAUTIOUS:
@@ -92,6 +104,8 @@ export function generateParametersForProfile(profile: BehavioralProfile): Decisi
       params.memoryTrustFactor = 0.9;         // High memory trust
       params.persistenceFactor = 0.6;         // Higher persistence (fewer direction changes)
       params.noveltyPreference = 0.2;         // Lower preference for novelty
+      params.foodMemoryImportance = 0.7;      // Higher importance for food memories
+      params.energyMemoryImportance = 0.7;    // Higher importance for energy memories
       break;
       
     case BehavioralProfile.BALANCED:
@@ -139,6 +153,10 @@ export function createRandomizedParameters(
   params.noveltyPreference = varyParam(params.noveltyPreference, 0.1, 1);
   params.persistenceFactor = varyParam(params.persistenceFactor, 0.1, 0.9);
   params.cooperationTendency = varyParam(params.cooperationTendency, 0.1, 1);
+  
+  // Apply variation to memory importance parameters
+  params.foodMemoryImportance = varyParam(params.foodMemoryImportance, 0.2, 1);
+  params.energyMemoryImportance = varyParam(params.energyMemoryImportance, 0.2, 1);
   
   // Apply variation to inference parameters
   params.inferenceThreshold = varyParam(params.inferenceThreshold, 50, 100);

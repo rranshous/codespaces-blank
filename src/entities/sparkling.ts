@@ -76,14 +76,18 @@ export class Sparkling {
       collectionRate: 10 // Units per second
     };
     
-    // Initialize memory system
-    this.memory = new Memory(config);
-    
     // Set behavioral profile and initialize decision parameters
     this.profile = profile;
     this.parameters = createRandomizedParameters(
       generateParametersForProfile(profile),
       0.2 // 20% variation to create individuality
+    );
+    
+    // Initialize memory system with importance parameters from the Sparkling's decision parameters
+    this.memory = new Memory(
+      config,
+      this.parameters.foodMemoryImportance,
+      this.parameters.energyMemoryImportance
     );
     
     // Set initial home position to starting point
@@ -1280,6 +1284,14 @@ export class Sparkling {
    */
   public updateParameters(parameters: Partial<DecisionParameters>): void {
     this.parameters = { ...this.parameters, ...parameters };
+    
+    // Update memory importance parameters when decision parameters change
+    if (parameters.foodMemoryImportance !== undefined || parameters.energyMemoryImportance !== undefined) {
+      this.memory.updateMemoryImportance(
+        this.parameters.foodMemoryImportance,
+        this.parameters.energyMemoryImportance
+      );
+    }
   }
   
   /**
