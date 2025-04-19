@@ -551,6 +551,12 @@ export class Simulation {
     // Inference section
     content += `<div style="color: #f1fa8c; margin-top: 8px; margin-bottom: 3px;">Inference</div>`;
     content += `<div style="margin-left: 10px;">`;
+    content += `Energy Threshold: ${parameters.inferenceThreshold.toFixed(1)} (${(parameters.inferenceThreshold / sparkling.getMaxNeuralEnergy() * 100).toFixed(0)}%)`;
+    content += `</div>`;
+    content += `<div style="margin-left: 10px;">`;
+    content += `Interval: ${parameters.inferenceInterval.toFixed(1)}s minimum`;
+    content += `</div>`;
+    content += `<div style="margin-left: 10px;">`;
     content += `Last Inference: ${lastInferenceText}`;
     content += `</div>`;
     
@@ -562,8 +568,23 @@ export class Simulation {
       content += `</div>`;
     }
     
+    // Thresholds section 
+    content += `<div style="color: #f1fa8c; margin-top: 8px; margin-bottom: 3px;">Thresholds</div>`;
+    content += `<div style="margin-left: 10px;">`;
+    content += `Food Low: ${parameters.hungerThreshold.toFixed(2)} (${(parameters.hungerThreshold * 100).toFixed(0)}%)`;
+    content += `</div>`;
+    content += `<div style="margin-left: 10px;">`;
+    content += `Food Critical: ${parameters.criticalHungerThreshold.toFixed(2)} (${(parameters.criticalHungerThreshold * 100).toFixed(0)}%)`;
+    content += `</div>`;
+    content += `<div style="margin-left: 10px;">`;
+    content += `Energy Low: ${parameters.energyLowThreshold.toFixed(2)} (${(parameters.energyLowThreshold * 100).toFixed(0)}%)`;
+    content += `</div>`;
+    content += `<div style="margin-left: 10px;">`;
+    content += `Energy Critical: ${parameters.criticalEnergyThreshold.toFixed(2)} (${(parameters.criticalEnergyThreshold * 100).toFixed(0)}%)`;
+    content += `</div>`;
+    
     // Key parameters section
-    content += `<div style="color: #f1fa8c; margin-top: 8px; margin-bottom: 3px;">Key Parameters</div>`;
+    content += `<div style="color: #f1fa8c; margin-top: 8px; margin-bottom: 3px;">Behavioral Parameters</div>`;
     content += `<div style="margin-left: 10px;">`;
     content += `Profile: ${profile}`;
     content += `</div>`;
@@ -575,6 +596,12 @@ export class Simulation {
     content += `</div>`;
     content += `<div style="margin-left: 10px;">`;
     content += `Novelty Preference: ${parameters.noveltyPreference.toFixed(2)}`;
+    content += `</div>`;
+    content += `<div style="margin-left: 10px;">`;
+    content += `Persistence: ${parameters.persistenceFactor.toFixed(2)}`;
+    content += `</div>`;
+    content += `<div style="margin-left: 10px;">`;
+    content += `Personal Space: ${parameters.personalSpaceFactor.toFixed(0)} units`;
     content += `</div>`;
     
     tooltipElement.innerHTML = content;
