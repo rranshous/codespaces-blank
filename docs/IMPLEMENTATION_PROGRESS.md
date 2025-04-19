@@ -141,6 +141,10 @@ This document tracks our progress in implementing the Sparklings Neural Energy S
 - Fixed issues with memory importance parameters not being properly passed between components
 - Modified Sparkling constructor to pass foodMemoryImportance and energyMemoryImportance to Memory
 - Updated the updateParameters method to synchronize Memory's importance values when parameters change
+- Verified that the inference system properly includes memory importance parameters in the AI prompt
+- Confirmed that both the "Current Instincts" section and "Response Format" section include these parameters
+- Updated validation ranges and valid parameter names list in the inference system
+- Updated the InferenceQualityTester to include these parameters in test cases
 - This allows each Sparkling to maintain its own memory importance preferences
 - Gatherer profile Sparklings (high food memory importance) now properly remember food locations better
 - Energy Seeker profile Sparklings (high energy memory importance) now properly remember energy locations better
