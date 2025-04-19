@@ -82,23 +82,22 @@ This document tracks our progress in implementing the Sparklings Neural Energy S
 
 ## Phase 4: Visualization & User Interface
 
-### Milestone 4.1: Enhanced Visualization ✅
+### Milestone 4.1: Enhanced Visualization ⬜ (In Progress)
 - [x] Improve world visualization with better terrain rendering
-- [x] Enhance Sparkling visualization with animation and effects
-- [x] Add resource visualization with quality indicators
-- [x] Implement zoom and pan controls
+- [ ] Enhance Sparkling visualization with animation and effects
+- [ ] Add resource visualization with quality indicators
+- [ ] Implement zoom and pan controls
 
-### Milestone 4.2: UI Controls & Information ✅
-- [x] Create simulation control panel (start, stop, speed)
+### Milestone 4.2: UI Controls & Information ⬜ (In Progress)
+- [x] Create simulation control panel (start, stop)
 - [x] Implement Sparkling selection and detailed view
-- [x] Add statistics dashboard for simulation metrics
-- [x] Develop time controls (fast-forward, rewind)
+- [ ] Add statistics dashboard for simulation metrics
+- [ ] Develop time controls (fast-forward, rewind, speed control)
 
-### Milestone 4.3: Debugging & Analysis Tools ✅
+### Milestone 4.3: Debugging & Analysis Tools ⬜ (In Progress)
 - [x] Create debugging panel for viewing internal state
 - [x] Implement logging system for important events
-- [x] Add analysis tools for tracking simulation trends
-- [x] Develop export functionality for simulation data
+- [ ] Add analysis tools for tracking simulation trends
 
 ## Phase 5: Optimization & Refinement (Future)
 
@@ -124,6 +123,7 @@ This document tracks our progress in implementing the Sparklings Neural Energy S
 - [ ] Social behaviors and cooperation mechanics
 - [ ] User interaction with Sparklings and environment
 - [ ] Server-side persistence for long-running simulations
+- [ ] Develop export functionality for simulation data
 
 ## Recent Updates (April 19, 2025)
 
