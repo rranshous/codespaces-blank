@@ -37,34 +37,37 @@ Version 1 established the core foundation of the Sparklings simulation and succe
 
 ## Version 2 (In Progress - Started April 19, 2025)
 
-Version 2 builds on the Version 1 foundation to create more emergent behaviors and enhanced user experience:
+Version 2 builds on the Version 1 foundation with the following phased implementation:
 
-### Advanced Competition & Territories
-- [ ] Strategic competition based on resource value
-- [ ] Territory enhancements with benefits
-- [ ] Resource quality variations and depletion mechanics
+### Phase 1: Simulation Speed Controls
+- [ ] Speed multiplier selector (1x, 2x, 5x, 10x)
+- [ ] Variable time step handling in simulation loop
+- [ ] Current speed visualization
 
-### Enhanced User Experience
-- [ ] Simulation time controls (speed up/slow down)
-- [ ] Analytics dashboard for simulation metrics
-- [ ] Enhanced visualization with more detail
-
-### Emergent Behaviors & Adaptation
-- [ ] Behavioral adaptation based on experiences
-- [ ] Social dynamics between Sparklings
-- [ ] Environmental challenges
-
-### Sparkling Lifecycle
-- [ ] Fadeout mechanics for resource-deprived Sparklings
+### Phase 2: Sparkling Lifecycle Mechanics
+- [ ] Energy monitoring visualization improvements
+- [ ] Fadeout mechanics for depleted Sparklings
 - [ ] New Sparkling introduction mechanics
-- [ ] Population balance dynamics
+- [ ] Population balance controls
+
+### Phase 3: Enhanced Visualization & Analytics
+- [ ] Advanced visualization controls (zoom, pan, paths)
+- [ ] Basic analytics for simulation metrics
+- [ ] Environmental and territorial visualization improvements
+
+### Phase 4: Sparkling Inheritance & Evolution
+- [ ] Parameter inheritance from successful Sparklings
+- [ ] Evolution mechanics with selection pressures
+- [ ] Lineage visualization and tracking
 
 ## Latest Updates
 
 ### April 19, 2025
 - Completed Version 1 implementation
-- Started planning for Version 2
-- Created initial Version 2 documentation
+- Created Version 2 implementation plan with revised phase priorities
+- Updated documentation to reflect streamlined implementation strategy
+- Removed detailed analytics features to focus on core functionality
+- Ready to begin Phase 1 implementation
 
 ## Future Directions
 
