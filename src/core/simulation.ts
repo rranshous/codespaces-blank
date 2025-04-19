@@ -673,13 +673,128 @@ export class Simulation {
     content += `<div style="margin-bottom: 5px;"><span style="color: #ff79c6;">Status:</span> ${state}</div>`;
     content += `<div style="margin-bottom: 5px;"><span style="color: #ff79c6;">Inference:</span> ${inferenceStatus}</div>`;
     
-    // Resources section
+    // Enhanced Resources section with visual indicators
     content += `<div style="color: #f1fa8c; margin-top: 8px; margin-bottom: 3px;">Resources</div>`;
-    content += `<div style="margin-left: 10px;">`;
-    content += `Food: ${resourceLevels.food.toFixed(1)} / ${parameters.foodSatiationThreshold.toFixed(1)} threshold`;
+    
+    // Calculate percentages for visualization
+    const foodPercentage = resourceLevels.food / sparkling.getMaxFood() * 100;
+    const energyPercentage = resourceLevels.neuralEnergy / sparkling.getMaxNeuralEnergy() * 100;
+    const hungerThresholdPercentage = parameters.hungerThreshold * 100;
+    const criticalHungerThresholdPercentage = parameters.criticalHungerThreshold * 100;
+    const foodSatiationThresholdPercentage = parameters.foodSatiationThreshold * 100;
+    
+    // Food level with visual indicators and detailed thresholds
+    content += `<div style="margin-left: 10px; margin-bottom: 10px;">`;
+    // Add food level text with percentage
+    content += `<div style="margin-bottom: 3px;">Food: ${resourceLevels.food.toFixed(1)} / ${sparkling.getMaxFood().toFixed(1)} (${foodPercentage.toFixed(0)}%)</div>`;
+    
+    // Add visual food bar with threshold markers
+    content += `<div style="position: relative; width: 100%; height: 20px; background-color: #2d3748; border-radius: 3px; overflow: hidden; margin-top: 5px;">`;
+    
+    // Food level fill
+    let fillColor = '#48bb78'; // Default green
+    if (foodPercentage < hungerThresholdPercentage) {
+        fillColor = '#ecc94b'; // Yellow for hungry
+    }
+    if (foodPercentage < criticalHungerThresholdPercentage) {
+        fillColor = '#f56565'; // Red for critical hunger
+    }
+    
+    content += `<div style="position: absolute; height: 100%; width: ${foodPercentage}%; background-color: ${fillColor}; transition: width 0.3s ease;"></div>`;
+    
+    // Add threshold markers
+    // Critical hunger threshold marker
+    content += `<div style="position: absolute; height: 100%; left: ${criticalHungerThresholdPercentage}%; width: 2px; background-color: #f56565;" title="Critical Hunger Threshold"></div>`;
+    
+    // Hunger threshold marker
+    content += `<div style="position: absolute; height: 100%; left: ${hungerThresholdPercentage}%; width: 2px; background-color: #ecc94b;" title="Hunger Threshold"></div>`;
+    
+    // Satiation threshold marker
+    content += `<div style="position: absolute; height: 100%; left: ${foodSatiationThresholdPercentage}%; width: 2px; background-color: #48bb78;" title="Food Satiation Threshold"></div>`;
+    
+    // Add threshold labels
+    content += `<div style="position: absolute; top: 2px; left: ${criticalHungerThresholdPercentage + 1}%; font-size: 9px; color: white;">Crit</div>`;
+    content += `<div style="position: absolute; top: 2px; left: ${hungerThresholdPercentage + 1}%; font-size: 9px; color: white;">Hungry</div>`;
+    content += `<div style="position: absolute; top: 2px; left: ${foodSatiationThresholdPercentage + 1}%; font-size: 9px; color: white;">Satiated</div>`;
+    
     content += `</div>`;
+    content += `</div>`;
+    
+    // Threshold descriptions
+    content += `<div style="margin-left: 10px; font-size: 11px; margin-bottom: 8px;">`;
+    content += `<div><span style="color: #f56565;">■</span> Critical Hunger: ${(parameters.criticalHungerThreshold * 100).toFixed(0)}% (${(parameters.criticalHungerThreshold * sparkling.getMaxFood()).toFixed(1)} units)</div>`;
+    content += `<div><span style="color: #ecc94b;">■</span> Hunger Threshold: ${(parameters.hungerThreshold * 100).toFixed(0)}% (${(parameters.hungerThreshold * sparkling.getMaxFood()).toFixed(1)} units)</div>`;
+    content += `<div><span style="color: #48bb78;">■</span> Satiation: ${(parameters.foodSatiationThreshold * 100).toFixed(0)}% (${(parameters.foodSatiationThreshold * sparkling.getMaxFood()).toFixed(1)} units)</div>`;
+    content += `</div>`;
+    
+    // Food consumption stats
+    content += `<div style="margin-left: 10px; font-size: 11px; margin-bottom: 8px;">`;
+    content += `Food Consumption Rate: ${sparkling.getFoodConsumptionRate().toFixed(2)} units/s`;
+    content += `</div>`;
+    
+    // Neural Energy level with visual indicator
+    content += `<div style="margin-left: 10px; margin-bottom: 10px;">`;
+    content += `<div style="margin-bottom: 3px;">Neural Energy: ${resourceLevels.neuralEnergy.toFixed(1)} / ${sparkling.getMaxNeuralEnergy().toFixed(1)} (${energyPercentage.toFixed(0)}%)</div>`;
+    
+    // Add visual energy bar
+    content += `<div style="position: relative; width: 100%; height: 20px; background-color: #2d3748; border-radius: 3px; overflow: hidden; margin-top: 5px;">`;
+    
+    // Energy level fill
+    let energyFillColor = '#9f7aea'; // Purple for neural energy
+    if (energyPercentage < parameters.energyLowThreshold * 100) {
+        energyFillColor = '#d53f8c'; // Pink for low energy
+    }
+    if (energyPercentage < parameters.criticalEnergyThreshold * 100) {
+        energyFillColor = '#805ad5'; // Darker purple for critical energy
+    }
+    if (energyPercentage >= parameters.inferenceThreshold / sparkling.getMaxNeuralEnergy() * 100) {
+        energyFillColor = '#667eea'; // Blue for inference-ready
+    }
+    
+    content += `<div style="position: absolute; height: 100%; width: ${energyPercentage}%; background-color: ${energyFillColor};"></div>`;
+    
+    // Add inference threshold marker
+    const inferenceThresholdPercentage = parameters.inferenceThreshold / sparkling.getMaxNeuralEnergy() * 100;
+    content += `<div style="position: absolute; height: 100%; left: ${inferenceThresholdPercentage}%; width: 2px; background-color: #667eea;" title="Inference Threshold"></div>`;
+    content += `<div style="position: absolute; top: 2px; left: ${inferenceThresholdPercentage + 1}%; font-size: 9px; color: white;">Inference</div>`;
+    
+    content += `</div>`;
+    content += `</div>`;
+    
+    // Food behavior indicators - NEW
+    content += `<div style="color: #f1fa8c; margin-top: 10px; margin-bottom: 3px;">Food Behaviors</div>`;
     content += `<div style="margin-left: 10px;">`;
-    content += `Neural Energy: ${resourceLevels.neuralEnergy.toFixed(1)} (${(resourceLevels.neuralEnergy / sparkling.getMaxNeuralEnergy() * 100).toFixed(0)}%)`;
+    
+    // Show current food-seeking status
+    if (state === SparklingState.SEEKING_FOOD) {
+        content += `<div style="color: #ecc94b;">Currently seeking food</div>`;
+    } else if (state === SparklingState.COLLECTING && sparkling.isCollectingFood()) {
+        content += `<div style="color: #48bb78;">Currently collecting food</div>`;
+    }
+    
+    // Food collection statistics
+    content += `<div>Collection Efficiency: ${(parameters.collectionEfficiency * 100).toFixed(0)}%</div>`;
+    
+    // Time estimates based on current food level and consumption rate
+    const foodConsumptionRate = sparkling.getFoodConsumptionRate();
+    if (foodConsumptionRate > 0) {
+        // Time until critical hunger
+        if (foodPercentage > criticalHungerThresholdPercentage) {
+            const timeUntilCritical = (resourceLevels.food - parameters.criticalHungerThreshold * sparkling.getMaxFood()) / foodConsumptionRate;
+            content += `<div>Time until critical hunger: ${timeUntilCritical.toFixed(1)}s</div>`;
+        } else {
+            content += `<div style="color: #f56565;">CRITICAL HUNGER STATE</div>`;
+        }
+        
+        // Time until empty
+        const timeUntilEmpty = resourceLevels.food / foodConsumptionRate;
+        content += `<div>Time until food depleted: ${timeUntilEmpty.toFixed(1)}s</div>`;
+    }
+    
+    // Add known food source count from memory
+    const foodMemories = memory.getMemoriesByType(MemoryEventType.RESOURCE_FOUND);
+    content += `<div>Known food sources: ${foodMemories.length}</div>`;
+    
     content += `</div>`;
     
     // Memory section

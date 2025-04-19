@@ -52,3 +52,7 @@ This document captures important lessons, insights, and best practices we've dis
 1. **Implementation Progress**: Keep the implementation progress document updated as changes are made to help track development status.
 
 2. **Code Comments**: Important logic should be well-commented to explain why certain decisions were made.
+
+3. **Documentation Review**: Frequently review high-level documentation for correctness and completeness. This helps ensure that documents like SIMULATION_FEATURES.md remain accurate as features are added or modified, preventing discrepancies between documentation and implementation.
+
+4. **Feature Documentation**: Update feature documentation in real-time as implementations are completed, rather than waiting until the end of a development cycle. This ensures that documentation always reflects the current state of the application.

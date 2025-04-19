@@ -968,9 +968,21 @@ export class Sparkling {
   public render(context: CanvasRenderingContext2D, debug: boolean = false): void {
     // Calculate the body size based on food level
     const bodySize = 10 + (this.food / this.stats.maxFood) * 5;
+    const foodRatio = this.food / this.stats.maxFood;
+    
+    // Determine body color based on food level - add pulsing effect for low food
+    let bodyColor = this.color;
+    if (foodRatio < this.parameters.criticalHungerThreshold) {
+      // Critical hunger - pulsing red tint
+      const pulseIntensity = 0.4 + 0.3 * Math.sin(this.totalTime * 4);
+      bodyColor = this.blendColors(this.color, `rgba(255, 50, 0, ${pulseIntensity})`);
+    } else if (foodRatio < this.parameters.hungerThreshold) {
+      // Low food - slight yellow tint
+      bodyColor = this.blendColors(this.color, 'rgba(255, 200, 0, 0.3)');
+    }
     
     // Draw the main body
-    context.fillStyle = this.color;
+    context.fillStyle = bodyColor;
     context.beginPath();
     context.arc(this.position.x, this.position.y, bodySize, 0, Math.PI * 2);
     context.fill();
@@ -1086,6 +1098,74 @@ export class Sparkling {
       }
     }
     
+    // NEW: Always show food level indicators
+    // Draw food level bar - always visible unlike energy bar
+    const foodBarWidth = 24;
+    const foodBarHeight = 3;
+    const foodBarX = this.position.x - foodBarWidth / 2;
+    const foodBarY = this.position.y + bodySize + 5;
+    
+    // Food bar background
+    context.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    context.fillRect(foodBarX, foodBarY, foodBarWidth, foodBarHeight);
+    
+    // Food level with color based on level
+    let foodBarColor;
+    if (foodRatio < this.parameters.criticalHungerThreshold) {
+      // Critical - red with pulsing effect
+      const pulseIntensity = 0.7 + 0.3 * Math.sin(this.totalTime * 4);
+      foodBarColor = `rgba(255, 50, 0, ${pulseIntensity})`;
+    } else if (foodRatio < this.parameters.hungerThreshold) {
+      // Low - yellow/orange
+      foodBarColor = 'rgba(255, 150, 0, 0.8)';
+    } else if (foodRatio > this.parameters.foodSatiationThreshold) {
+      // High - green
+      foodBarColor = 'rgba(76, 175, 80, 0.8)';
+    } else {
+      // Normal - gold
+      foodBarColor = 'rgba(255, 215, 0, 0.8)';
+    }
+    
+    context.fillStyle = foodBarColor;
+    context.fillRect(foodBarX, foodBarY, foodBarWidth * foodRatio, foodBarHeight);
+    
+    // Draw threshold markers
+    // Critical threshold
+    let thresholdX = foodBarX + (this.parameters.criticalHungerThreshold) * foodBarWidth;
+    context.strokeStyle = 'rgba(255, 50, 0, 0.7)';
+    context.beginPath();
+    context.moveTo(thresholdX, foodBarY - 1);
+    context.lineTo(thresholdX, foodBarY + foodBarHeight + 1);
+    context.stroke();
+    
+    // Hunger threshold
+    thresholdX = foodBarX + (this.parameters.hungerThreshold) * foodBarWidth;
+    context.strokeStyle = 'rgba(255, 150, 0, 0.7)';
+    context.beginPath();
+    context.moveTo(thresholdX, foodBarY - 1);
+    context.lineTo(thresholdX, foodBarY + foodBarHeight + 1);
+    context.stroke();
+    
+    // Show food percentage when low or in debug mode
+    if (foodRatio < this.parameters.hungerThreshold || debug) {
+      context.fillStyle = foodRatio < this.parameters.criticalHungerThreshold ? 
+                          'rgba(255, 100, 100, 0.9)' : 'rgba(255, 255, 255, 0.9)';
+      context.font = '7px Arial';
+      context.textAlign = 'center';
+      context.fillText(
+        `${(foodRatio * 100).toFixed(0)}%`,
+        foodBarX + foodBarWidth / 2,
+        foodBarY + foodBarHeight + 7
+      );
+    }
+    
+    // Draw food icon when at critical levels
+    if (foodRatio < this.parameters.criticalHungerThreshold) {
+      context.font = '10px Arial';
+      context.fillStyle = 'rgba(255, 100, 100, 0.9)';
+      context.fillText('🍽️', foodBarX - 12, foodBarY + foodBarHeight);
+    }
+    
     // Draw inference status indicator if actively inferring
     if (this.inferenceStatus !== InferenceStatus.IDLE) {
       // Draw thinking animation
@@ -1167,6 +1247,49 @@ export class Sparkling {
       this.renderParameterIndicators(context);
       this.renderMemory(context);
     }
+  }
+  
+  /**
+   * Helper method to blend two colors for visual effects
+   */
+  private blendColors(color1: string, color2: string): string {
+    // Simple implementation for hex or rgba colors
+    if (color2.startsWith('rgba')) {
+      // Extract alpha from rgba color
+      const match = color2.match(/rgba\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*([\d.]+)\s*\)/);
+      if (match) {
+        const r2 = parseInt(match[1], 10);
+        const g2 = parseInt(match[2], 10);
+        const b2 = parseInt(match[3], 10);
+        const a2 = parseFloat(match[4]);
+        
+        // Extract rgb from first color (hex or rgb)
+        let r1, g1, b1;
+        if (color1.startsWith('#')) {
+          r1 = parseInt(color1.substr(1, 2), 16);
+          g1 = parseInt(color1.substr(3, 2), 16);
+          b1 = parseInt(color1.substr(5, 2), 16);
+        } else {
+          const match1 = color1.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+))?\s*\)/);
+          if (match1) {
+            r1 = parseInt(match1[1], 10);
+            g1 = parseInt(match1[2], 10);
+            b1 = parseInt(match1[3], 10);
+          } else {
+            return color1; // Fallback to color1 if no match
+          }
+        }
+        
+        // Blend colors
+        const r = Math.round(r1 * (1 - a2) + r2 * a2);
+        const g = Math.round(g1 * (1 - a2) + g2 * a2);
+        const b = Math.round(b1 * (1 - a2) + b2 * a2);
+        
+        return `rgb(${r}, ${g}, ${b})`;
+      }
+    }
+    
+    return color1; // Fallback
   }
   
   /**
@@ -1422,6 +1545,53 @@ export class Sparkling {
    */
   public getMaxNeuralEnergy(): number {
     return this.stats.maxNeuralEnergy;
+  }
+  
+  /**
+   * Get the maximum food capacity
+   */
+  public getMaxFood(): number {
+    return this.stats.maxFood;
+  }
+  
+  /**
+   * Get the current food consumption rate
+   */
+  public getFoodConsumptionRate(): number {
+    // Base food consumption rate with adjustments based on state
+    let rate = this.stats.foodConsumptionRate;
+    
+    // Extra consumption during movement
+    if (this.state !== SparklingState.IDLE && this.state !== SparklingState.RESTING) {
+      rate += 0.1; // Movement cost
+    }
+    
+    return rate;
+  }
+  
+  /**
+   * Check if the Sparkling is currently collecting food specifically
+   * (as opposed to neural energy)
+   */
+  public isCollectingFood(): boolean {
+    if (this.state !== SparklingState.COLLECTING) {
+      return false;
+    }
+    
+    // Determine if we're prioritizing food collection based on resource preference
+    // and current needs
+    const foodRatio = this.food / this.stats.maxFood;
+    const energyRatio = this.neuralEnergy / this.stats.maxNeuralEnergy;
+    
+    // If we need food more urgently than energy, we're probably collecting food
+    if (foodRatio < this.parameters.hungerThreshold && 
+        (energyRatio > this.parameters.energyLowThreshold || 
+         foodRatio < energyRatio)) {
+      return true;
+    }
+    
+    // Check resource preference to determine what we're likely collecting
+    return this.parameters.resourcePreference <= 0; // Preference for food
   }
   
   /**

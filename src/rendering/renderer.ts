@@ -118,8 +118,18 @@ export class Renderer {
     
     // Draw food resources (if any)
     if (cell.resources > 0) {
+      // Enhanced food visualization:
+      // 1. Size based on logarithmic scale of resource amount
       const resourceRadius = Math.min(3 + Math.log1p(cell.resources), cellSize / 3);
-      this.context.fillStyle = '#FFD700'; // Gold
+      
+      // 2. Color intensity based on resource amount 
+      // More saturated color for richer food sources
+      const saturation = Math.min(70 + Math.log1p(cell.resources) * 5, 100);
+      const lightness = Math.max(65 - Math.log1p(cell.resources) * 2, 45);
+      const foodColor = `hsl(50, ${saturation}%, ${lightness}%)`;
+      
+      // 3. Draw food with glow effect for high amounts
+      this.context.fillStyle = foodColor;
       this.context.beginPath();
       this.context.arc(
         centerX - cellSize / 4, 
@@ -129,12 +139,41 @@ export class Renderer {
         Math.PI * 2
       );
       this.context.fill();
+      
+      // Add glow to rich food sources
+      if (cell.resources > 20) {
+        const glowRadius = resourceRadius + 2;
+        this.context.fillStyle = `rgba(255, 215, 0, ${Math.min(0.1 + cell.resources/200, 0.3)})`;
+        this.context.beginPath();
+        this.context.arc(
+          centerX - cellSize / 4, 
+          centerY, 
+          glowRadius, 
+          0, 
+          Math.PI * 2
+        );
+        this.context.fill();
+      }
+      
+      // For very rich sources, add food icon
+      if (cell.resources > 50) {
+        this.context.font = '8px Arial';
+        this.context.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        this.context.textAlign = 'center';
+        this.context.fillText('🍎', centerX - cellSize / 4, centerY - resourceRadius - 3);
+      }
     }
     
     // Draw neural energy (if any)
     if (cell.neuralEnergy > 0) {
       const energyRadius = Math.min(2 + Math.log1p(cell.neuralEnergy), cellSize / 4);
-      this.context.fillStyle = '#9C27B0'; // Purple
+      
+      // Enhanced visualization for neural energy
+      const saturation = Math.min(70 + Math.log1p(cell.neuralEnergy) * 5, 100);
+      const lightness = Math.max(60 - Math.log1p(cell.neuralEnergy) * 2, 40);
+      const energyColor = `hsl(280, ${saturation}%, ${lightness}%)`;
+      
+      this.context.fillStyle = energyColor;
       this.context.beginPath();
       this.context.arc(
         centerX + cellSize / 4, 
@@ -144,6 +183,29 @@ export class Renderer {
         Math.PI * 2
       );
       this.context.fill();
+      
+      // Add glow to rich energy sources
+      if (cell.neuralEnergy > 15) {
+        const glowRadius = energyRadius + 2;
+        this.context.fillStyle = `rgba(156, 39, 176, ${Math.min(0.1 + cell.neuralEnergy/150, 0.3)})`;
+        this.context.beginPath();
+        this.context.arc(
+          centerX + cellSize / 4, 
+          centerY, 
+          glowRadius, 
+          0, 
+          Math.PI * 2
+        );
+        this.context.fill();
+      }
+      
+      // For very rich sources, add energy icon
+      if (cell.neuralEnergy > 40) {
+        this.context.font = '8px Arial';
+        this.context.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        this.context.textAlign = 'center';
+        this.context.fillText('⚡', centerX + cellSize / 4, centerY - energyRadius - 3);
+      }
     }
   }
 
