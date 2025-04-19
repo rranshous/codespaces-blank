@@ -152,6 +152,16 @@ This document tracks our progress in implementing the Sparklings Neural Energy S
 - More important memories will be retained longer during memory pruning
 - Memory importance parameters also affect how the inference system utilizes memories in decision-making
 
+### UI Improvements
+- Confirmed that the Sparkling tooltip shows all parameters, including memory importance parameters
+- The tooltip is already using a wider layout (450px to 600px) to display all parameters
+- Parameters are organized in a two-column layout for better readability
+- Memory importance parameters are displayed in both the Memory section and the All Parameters section
+- Parameters are categorized into logical groups for easier understanding
+- The tooltip properly handles window boundaries to ensure it stays within the viewport
+- Added descriptive notes to parameters where relevant (e.g., showing resource preference as "Food", "Neutral", or "Energy")
+- Enhanced tooltips provide better visibility into each Sparkling's individual parameter settings
+
 ### Documentation Improvements
 - Created a new LESSONS.md document to capture development lessons and best practices
 - Documented the lesson about updating parameter-related code in multiple places when adding new parameters
