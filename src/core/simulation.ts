@@ -447,8 +447,8 @@ export class Simulation {
       tooltipElement.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.3)';
       tooltipElement.style.fontSize = '12px';
       tooltipElement.style.fontFamily = 'monospace';
-      tooltipElement.style.minWidth = '300px';
-      tooltipElement.style.maxWidth = '400px';
+      tooltipElement.style.minWidth = '450px';  // Increased from 300px
+      tooltipElement.style.maxWidth = '600px';  // Increased from 400px
       tooltipElement.style.whiteSpace = 'pre-wrap';
       tooltipElement.style.pointerEvents = 'none'; // Prevent the tooltip from interfering with mouse events
       document.body.appendChild(tooltipElement);
@@ -541,11 +541,19 @@ export class Simulation {
     
     // Memory section
     content += `<div style="color: #f1fa8c; margin-top: 8px; margin-bottom: 3px;">Memory</div>`;
-    content += `<div style="margin-left: 10px;">`;
+    content += `<div style="display: flex; flex-wrap: wrap;">`;
+    content += `<div style="margin-left: 10px; flex: 0 0 45%;">`;
     content += `Food Locations: ${memory.getMemoriesByType(MemoryEventType.RESOURCE_FOUND).length}`;
     content += `</div>`;
-    content += `<div style="margin-left: 10px;">`;
+    content += `<div style="margin-left: 10px; flex: 0 0 45%;">`;
     content += `Energy Locations: ${memory.getMemoriesByType(MemoryEventType.ENERGY_FOUND).length}`;
+    content += `</div>`;
+    content += `<div style="margin-left: 10px; flex: 0 0 45%;">`;
+    content += `Food Memory Importance: ${parameters.foodMemoryImportance.toFixed(2)}`;
+    content += `</div>`;
+    content += `<div style="margin-left: 10px; flex: 0 0 45%;">`;
+    content += `Energy Memory Importance: ${parameters.energyMemoryImportance.toFixed(2)}`;
+    content += `</div>`;
     content += `</div>`;
     
     // Inference section
@@ -568,61 +576,67 @@ export class Simulation {
       content += `</div>`;
     }
     
-    // Thresholds section 
-    content += `<div style="color: #f1fa8c; margin-top: 8px; margin-bottom: 3px;">Thresholds</div>`;
-    content += `<div style="margin-left: 10px;">`;
-    content += `Food Low: ${parameters.hungerThreshold.toFixed(2)} (${(parameters.hungerThreshold * 100).toFixed(0)}%)`;
-    content += `</div>`;
-    content += `<div style="margin-left: 10px;">`;
-    content += `Food Critical: ${parameters.criticalHungerThreshold.toFixed(2)} (${(parameters.criticalHungerThreshold * 100).toFixed(0)}%)`;
-    content += `</div>`;
-    content += `<div style="margin-left: 10px;">`;
-    content += `Energy Low: ${parameters.energyLowThreshold.toFixed(2)} (${(parameters.energyLowThreshold * 100).toFixed(0)}%)`;
-    content += `</div>`;
-    content += `<div style="margin-left: 10px;">`;
-    content += `Energy Critical: ${parameters.criticalEnergyThreshold.toFixed(2)} (${(parameters.criticalEnergyThreshold * 100).toFixed(0)}%)`;
-    content += `</div>`;
+    // Use flex layout for parameters to display them in a two-column format
+    content += `<div style="color: #f1fa8c; margin-top: 8px; margin-bottom: 3px;">All Parameters</div>`;
+    content += `<div style="display: flex; flex-wrap: wrap;">`;
     
-    // Key parameters section
-    content += `<div style="color: #f1fa8c; margin-top: 8px; margin-bottom: 3px;">Behavioral Parameters</div>`;
-    content += `<div style="margin-left: 10px;">`;
-    content += `Profile: ${profile}`;
-    content += `</div>`;
-    content += `<div style="margin-left: 10px;">`;
-    content += `Resource Preference: ${parameters.resourcePreference.toFixed(2)} (${parameters.resourcePreference < 0 ? 'Food' : parameters.resourcePreference > 0 ? 'Energy' : 'Neutral'})`;
-    content += `</div>`;
-    content += `<div style="margin-left: 10px;">`;
-    content += `Memory Trust: ${parameters.memoryTrustFactor.toFixed(2)}`;
-    content += `</div>`;
-    content += `<div style="margin-left: 10px;">`;
-    content += `Novelty Preference: ${parameters.noveltyPreference.toFixed(2)}`;
-    content += `</div>`;
-    content += `<div style="margin-left: 10px;">`;
-    content += `Persistence: ${parameters.persistenceFactor.toFixed(2)}`;
-    content += `</div>`;
-    content += `<div style="margin-left: 10px;">`;
-    content += `Personal Space: ${parameters.personalSpaceFactor.toFixed(0)} units`;
+    // Helper function to add a parameter to the display
+    const addParameter = (name: string, value: number, unit: string = "", notes: string = "") => {
+      content += `<div style="margin-left: 10px; flex: 0 0 45%; margin-bottom: 3px;">`;
+      content += `${name}: ${value.toFixed(2)}${unit}${notes ? ` (${notes})` : ''}`;
+      content += `</div>`;
+    };
+    
+    // Add all parameters in a more organized way
+    // Profile and Key Behavioral Parameters
+    addParameter("Food Memory Importance", parameters.foodMemoryImportance);
+    addParameter("Energy Memory Importance", parameters.energyMemoryImportance);
+    addParameter("Resource Preference", parameters.resourcePreference, "", parameters.resourcePreference < 0 ? 'Food' : parameters.resourcePreference > 0 ? 'Energy' : 'Neutral');
+    addParameter("Memory Trust Factor", parameters.memoryTrustFactor);
+    addParameter("Novelty Preference", parameters.noveltyPreference);
+    addParameter("Persistence Factor", parameters.persistenceFactor);
+    addParameter("Cooperation Tendency", parameters.cooperationTendency);
+    addParameter("Collection Efficiency", parameters.collectionEfficiency);
+    
+    // Thresholds and Ranges
+    addParameter("Hunger Threshold", parameters.hungerThreshold, "", `${(parameters.hungerThreshold * 100).toFixed(0)}%`);
+    addParameter("Critical Hunger", parameters.criticalHungerThreshold, "", `${(parameters.criticalHungerThreshold * 100).toFixed(0)}%`);
+    addParameter("Energy Low Threshold", parameters.energyLowThreshold, "", `${(parameters.energyLowThreshold * 100).toFixed(0)}%`);
+    addParameter("Critical Energy", parameters.criticalEnergyThreshold, "", `${(parameters.criticalEnergyThreshold * 100).toFixed(0)}%`);
+    addParameter("Food Satiation", parameters.foodSatiationThreshold, "", `${(parameters.foodSatiationThreshold * 100).toFixed(0)}%`);
+    addParameter("Energy Satiation", parameters.energySatiationThreshold, "", `${(parameters.energySatiationThreshold * 100).toFixed(0)}%`);
+    
+    // Activity Parameters
+    addParameter("Personal Space", parameters.personalSpaceFactor, " units");
+    addParameter("Exploration Range", parameters.explorationRange, " units");
+    addParameter("Exploration Duration", parameters.explorationDuration, "s");
+    addParameter("Rest Duration", parameters.restDuration, "s");
+    
+    // Inference Parameters
+    addParameter("Inference Threshold", parameters.inferenceThreshold, "", `${(parameters.inferenceThreshold / sparkling.getMaxNeuralEnergy() * 100).toFixed(0)}%`);
+    addParameter("Inference Interval", parameters.inferenceInterval, "s");
+    
     content += `</div>`;
     
     tooltipElement.innerHTML = content;
     
     // Position the tooltip near the mouse but ensure it stays in viewport
-    const tooltipWidth = tooltipElement.offsetWidth || 300;
-    const tooltipHeight = tooltipElement.offsetHeight || 200;
+    const tooltipWidth = tooltipElement.offsetWidth || 450;
+    const tooltipHeight = tooltipElement.offsetHeight || 300;
     const windowWidth = window.innerWidth;
     const windowHeight = window.innerHeight;
     
     // Add offset to prevent tooltip from appearing directly under the cursor
-    let tooltipX = mouseX + 10;
-    let tooltipY = mouseY + 10;
+    let tooltipX = mouseX + 15;
+    let tooltipY = mouseY + 15;
     
     // Ensure tooltip stays within window bounds
     if (tooltipX + tooltipWidth > windowWidth) {
-      tooltipX = mouseX - tooltipWidth - 10;
+      tooltipX = mouseX - tooltipWidth - 15;
     }
     
     if (tooltipY + tooltipHeight > windowHeight) {
-      tooltipY = mouseY - tooltipHeight - 10;
+      tooltipY = windowHeight - tooltipHeight - 15;
     }
     
     // Position and show the tooltip
