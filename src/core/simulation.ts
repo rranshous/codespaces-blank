@@ -26,6 +26,7 @@ export class Simulation {
   private inferenceSystem: InferenceSystem;
   private inferenceQualityTester: InferenceQualityTester;
   private useMockInference: boolean = true;
+  private populationMetricsDiv: HTMLDivElement | null = null;
 
   constructor(canvas: HTMLCanvasElement, config: Partial<SimulationConfig> = {}) {
     this.config = getConfig(config);
@@ -48,6 +49,7 @@ export class Simulation {
     this.setupEventListeners();
     this.world.initialize(worldOptions);
     this.createSparklings();
+    this.setupPopulationControls();
     
     // Perform an initial render
     this.render();
@@ -375,11 +377,14 @@ export class Simulation {
     
     // Check for sparkling encounters
     this.checkSparklingEncounters();
+    
+    // Update population metrics
+    this.updatePopulationMetrics();
   }
   
   /**
    * Remove Sparklings that have completed their fadeout process
-   * and spawn new ones to replace them
+   * and manage population balance
    */
   private removeCompletedFadeouts(): void {
     const fadedSparklings = this.sparklings.filter(sparkling => sparkling.shouldBeRemoved());
@@ -393,11 +398,193 @@ export class Simulation {
       // Remove the faded Sparklings from the array
       this.sparklings = this.sparklings.filter(sparkling => !sparkling.shouldBeRemoved());
       
-      // Spawn new Sparklings to replace the faded ones
-      this.spawnNewSparklings(fadedSparklings.length);
+      // Handle population control
+      this.managePopulation(fadedSparklings.length);
+    } 
+    else {
+      // Even if no Sparklings faded out, periodically check population balance
+      if (this.timeManager.getCurrentTime() % 5 < 0.016) { // Check roughly every 5 seconds
+        this.managePopulation(0);
+      }
     }
   }
   
+  /**
+   * Manage the Sparkling population based on configuration settings
+   * @param fadedCount Number of Sparklings that just faded out
+   */
+  private managePopulation(fadedCount: number): void {
+    if (!this.config.autoPopulationControl) {
+      // If auto population control is disabled, just replace the faded Sparklings
+      if (fadedCount > 0) {
+        this.spawnNewSparklings(fadedCount);
+      }
+      return;
+    }
+    
+    const currentPopulation = this.sparklings.length;
+    const targetPopulation = this.config.initialSparklingCount;
+    const allowedDeviation = this.config.populationBalanceRange;
+    
+    // Calculate the ideal number of Sparklings to add or remove based on resource availability
+    const resourceBalance = this.calculateResourceBalance();
+    const populationAdjustment = this.calculatePopulationAdjustment(resourceBalance, currentPopulation, targetPopulation);
+    
+    console.log(`Population Manager: Current=${currentPopulation}, Target=${targetPopulation}, Resource Balance=${resourceBalance.toFixed(2)}, Adjustment=${populationAdjustment}`);
+    
+    // If we need to add Sparklings to the population
+    if (populationAdjustment > 0) {
+      // Check we don't exceed the maximum population
+      const spawnCount = Math.min(populationAdjustment, this.config.maxSparklingCount - currentPopulation);
+      if (spawnCount > 0) {
+        console.log(`Population Manager: Spawning ${spawnCount} new Sparklings to balance ecosystem.`);
+        this.spawnNewSparklings(spawnCount);
+      }
+    }
+    // If we need to reduce the population beyond natural fadeout
+    else if (populationAdjustment < 0 && Math.abs(populationAdjustment) > fadedCount) {
+      // We've already lost fadedCount Sparklings naturally, so we only need to remove the difference
+      const additionalRemovalNeeded = Math.min(
+        Math.abs(populationAdjustment) - fadedCount,
+        currentPopulation - this.config.minSparklingCount // Don't go below minimum
+      );
+      
+      if (additionalRemovalNeeded > 0) {
+        console.log(`Population Manager: Initiating fadeout for ${additionalRemovalNeeded} Sparklings to balance ecosystem.`);
+        this.initiateAdditionalFadeouts(additionalRemovalNeeded);
+      }
+    }
+    
+    // Adjust the resource spawn rate based on population
+    this.adjustResourceSpawnRate();
+  }
+  
+  /**
+   * Calculate a resource balance factor between -1 and 1
+   * Negative values mean resources are scarce, positive values mean resources are abundant
+   */
+  private calculateResourceBalance(): number {
+    // Get resource metrics from the world
+    const resourceCells = this.world.findResourceRichCells(10);
+    const worldDimensions = this.world.getDimensions();
+    const totalCells = worldDimensions.width * worldDimensions.height;
+    
+    // Calculate total resources versus population demands
+    const totalResourceCells = resourceCells.length;
+    const currentPopulation = this.sparklings.length;
+    
+    // Get average food level across Sparklings as an indicator of health
+    const averageFoodLevel = this.sparklings.reduce((sum, sparkling) => {
+      return sum + (sparkling.getResourceLevels().food / sparkling.getMaxFood());
+    }, 0) / Math.max(1, currentPopulation);
+    
+    // Calculate resource availability per Sparkling
+    const resourcePerSparkling = totalResourceCells / Math.max(1, currentPopulation);
+    
+    // Calculate a balance factor from -1 (scarce) to 1 (abundant)
+    // Blend multiple metrics to get a more balanced view
+    const resourceFactor = (resourcePerSparkling - 1) / 4; // Normalize to roughly -1 to 1
+    const foodFactor = (averageFoodLevel - 0.5) * 2; // Normalize to roughly -1 to 1
+    
+    // Weight the factors (food level is more important than raw resource count)
+    const balance = resourceFactor * 0.4 + foodFactor * 0.6;
+    
+    // Clamp to -1 to 1 range
+    return Math.max(-1, Math.min(1, balance));
+  }
+  
+  /**
+   * Calculate how many Sparklings to add or remove based on resource balance
+   * @returns A number (positive for adding, negative for removing)
+   */
+  private calculatePopulationAdjustment(
+    resourceBalance: number, 
+    currentPopulation: number, 
+    targetPopulation: number
+  ): number {
+    // Start with the difference between current and target population
+    let adjustment = targetPopulation - currentPopulation;
+    
+    // If we're within the allowed deviation, adjust based on resource balance
+    if (Math.abs(adjustment) <= this.config.populationBalanceRange) {
+      // If resources are abundant, grow the population
+      if (resourceBalance > 0.3) {
+        // Calculate growth based on the growth rate and resource abundance
+        const growthPotential = Math.ceil(currentPopulation * this.config.populationGrowthRate * resourceBalance);
+        adjustment = Math.max(adjustment, growthPotential);
+      }
+      // If resources are scarce, shrink the population
+      else if (resourceBalance < -0.3) {
+        // Calculate decline based on the decline rate and resource scarcity
+        const declinePotential = Math.floor(currentPopulation * this.config.populationDeclineRate * -resourceBalance);
+        adjustment = Math.min(adjustment, -declinePotential);
+      }
+    }
+    
+    // Ensure we don't exceed configured limits
+    if (currentPopulation + adjustment < this.config.minSparklingCount) {
+      adjustment = this.config.minSparklingCount - currentPopulation;
+    }
+    
+    if (currentPopulation + adjustment > this.config.maxSparklingCount) {
+      adjustment = this.config.maxSparklingCount - currentPopulation;
+    }
+    
+    return adjustment;
+  }
+  
+  /**
+   * Initiate fadeout for additional Sparklings when population needs to be reduced
+   */
+  private initiateAdditionalFadeouts(count: number): void {
+    if (count <= 0) return;
+    
+    // Select Sparklings to fade out based on predefined criteria
+    // (preferring those with lower food/energy, older Sparklings, etc.)
+    const candidates = [...this.sparklings]
+      .filter(s => !s.isFading()) // Only consider Sparklings not already fading
+      .sort((a, b) => {
+        // Lower food value means higher priority for fadeout
+        const foodA = a.getResourceLevels().food / a.getMaxFood();
+        const foodB = b.getResourceLevels().food / b.getMaxFood();
+        
+        // Lower energy value means higher priority for fadeout
+        const energyA = a.getResourceLevels().neuralEnergy / a.getMaxNeuralEnergy();
+        const energyB = b.getResourceLevels().neuralEnergy / b.getMaxNeuralEnergy();
+        
+        // Combined factor (80% food, 20% energy)
+        const factorA = foodA * 0.8 + energyA * 0.2;
+        const factorB = foodB * 0.8 + energyB * 0.2;
+        
+        // Sort ascending (lowest resources first)
+        return factorA - factorB;
+      });
+    
+    // Initiate fadeout for the selected Sparklings
+    const selectedForFadeout = candidates.slice(0, count);
+    for (const sparkling of selectedForFadeout) {
+      sparkling.initiateControlledFadeout();
+      console.log(`Population Control: Initiating controlled fadeout for Sparkling #${sparkling.getId()} (low resources)`);
+    }
+  }
+  
+  /**
+   * Adjust resource spawn rate based on current population
+   */
+  private adjustResourceSpawnRate(): void {
+    // Get the base resource spawn rate
+    const baseSpawnRate = this.config.resourceSpawnRate;
+    
+    // Adjust based on population size
+    const populationFactor = this.sparklings.length * this.config.resourceSpawnRatePerSparkling;
+    
+    // Calculate new spawn rate with a minimum threshold
+    const newSpawnRate = Math.max(baseSpawnRate * 0.5, baseSpawnRate + populationFactor);
+    
+    // Apply the new spawn rate to the world
+    this.world.setResourceSpawnRate(newSpawnRate);
+  }
+
   /**
    * Spawn new Sparklings to replace those that have faded out
    * @param count Number of new Sparklings to spawn
@@ -736,6 +923,298 @@ export class Simulation {
     const canvas = this.renderer.getContext().canvas;
     canvas.addEventListener('mousemove', this.handleCanvasMouseMove.bind(this));
     canvas.addEventListener('mouseout', this.hideSparklingTooltip.bind(this));
+  }
+
+  /**
+   * Add population control UI to the simulation controls
+   */
+  private setupPopulationControls(): void {
+    const controlsDiv = document.getElementById('controls');
+    if (!controlsDiv) return;
+    
+    // Create a container for the population controls
+    const populationContainer = document.createElement('div');
+    populationContainer.id = 'population-controls';
+    populationContainer.style.marginTop = '15px';
+    populationContainer.style.padding = '10px';
+    populationContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.3)';
+    populationContainer.style.borderRadius = '5px';
+    
+    // Create a heading for the population section
+    const heading = document.createElement('h3');
+    heading.textContent = 'Population Control';
+    heading.style.margin = '0 0 10px 0';
+    heading.style.fontSize = '16px';
+    populationContainer.appendChild(heading);
+    
+    // Add auto population control toggle
+    const autoPopControlDiv = document.createElement('div');
+    autoPopControlDiv.style.marginBottom = '10px';
+    autoPopControlDiv.style.display = 'flex';
+    autoPopControlDiv.style.alignItems = 'center';
+    
+    const autoPopControlCheckbox = document.createElement('input');
+    autoPopControlCheckbox.type = 'checkbox';
+    autoPopControlCheckbox.id = 'auto-population-control';
+    autoPopControlCheckbox.checked = this.config.autoPopulationControl;
+    autoPopControlCheckbox.style.marginRight = '10px';
+    
+    const autoPopControlLabel = document.createElement('label');
+    autoPopControlLabel.htmlFor = 'auto-population-control';
+    autoPopControlLabel.textContent = 'Auto Population Control';
+    
+    autoPopControlDiv.appendChild(autoPopControlCheckbox);
+    autoPopControlDiv.appendChild(autoPopControlLabel);
+    
+    // Add event listener for the checkbox
+    autoPopControlCheckbox.addEventListener('change', () => {
+      this.config.autoPopulationControl = autoPopControlCheckbox.checked;
+      
+      // Update the UI elements based on checkbox state
+      populationControls.forEach(control => {
+        if (control.id !== 'auto-population-control') {
+          control.disabled = !autoPopControlCheckbox.checked;
+          control.style.opacity = autoPopControlCheckbox.checked ? '1' : '0.5';
+        }
+      });
+      
+      console.log(`Auto population control: ${this.config.autoPopulationControl ? 'enabled' : 'disabled'}`);
+    });
+    
+    populationContainer.appendChild(autoPopControlDiv);
+    
+    // Create population metrics display
+    this.populationMetricsDiv = document.createElement('div');
+    this.populationMetricsDiv.id = 'population-metrics';
+    this.populationMetricsDiv.style.marginBottom = '10px';
+    this.populationMetricsDiv.style.fontSize = '12px';
+    this.populationMetricsDiv.style.lineHeight = '1.5';
+    
+    // Initialize metrics display
+    this.updatePopulationMetrics();
+    
+    populationContainer.appendChild(this.populationMetricsDiv);
+    
+    // Create slider controls with labels for population parameters
+    const createSliderControl = (
+      id: string, 
+      label: string, 
+      min: number, 
+      max: number, 
+      value: number, 
+      step: number, 
+      onChange: (value: number) => void
+    ) => {
+      const controlDiv = document.createElement('div');
+      controlDiv.style.marginBottom = '10px';
+      
+      const controlLabel = document.createElement('label');
+      controlLabel.htmlFor = id;
+      controlLabel.textContent = `${label}: `;
+      controlLabel.style.marginRight = '10px';
+      controlLabel.style.display = 'inline-block';
+      controlLabel.style.width = '180px';
+      
+      const slider = document.createElement('input');
+      slider.type = 'range';
+      slider.id = id;
+      slider.min = min.toString();
+      slider.max = max.toString();
+      slider.value = value.toString();
+      slider.step = step.toString();
+      slider.style.width = '150px';
+      slider.style.marginRight = '10px';
+      
+      const valueDisplay = document.createElement('span');
+      valueDisplay.textContent = value.toString();
+      valueDisplay.style.minWidth = '40px';
+      valueDisplay.style.display = 'inline-block';
+      
+      // Add event listener
+      slider.addEventListener('input', () => {
+        const newValue = parseFloat(slider.value);
+        valueDisplay.textContent = newValue.toString();
+        onChange(newValue);
+      });
+      
+      // Add to control div
+      controlDiv.appendChild(controlLabel);
+      controlDiv.appendChild(slider);
+      controlDiv.appendChild(valueDisplay);
+      
+      return { div: controlDiv, input: slider };
+    };
+    
+    // Create sliders for each population parameter
+    const populationSliders = [
+      createSliderControl(
+        'min-sparkling-count',
+        'Minimum Population',
+        5, 30, this.config.minSparklingCount, 1,
+        (value) => {
+          this.config.minSparklingCount = value;
+          if (this.config.initialSparklingCount < value) {
+            this.config.initialSparklingCount = value;
+            const minSlider = document.getElementById('initial-sparkling-count') as HTMLInputElement;
+            if (minSlider) {
+              minSlider.value = value.toString();
+            }
+            
+            const valueSpan = document.querySelector('label[for="initial-sparkling-count"] + input + span');
+            if (valueSpan) {
+              valueSpan.textContent = value.toString();
+            }
+          }
+        }
+      ),
+      
+      createSliderControl(
+        'initial-sparkling-count',
+        'Target Population',
+        5, 30, this.config.initialSparklingCount, 1,
+        (value) => {
+          this.config.initialSparklingCount = value;
+          // Ensure min/max constraints
+          if (value < this.config.minSparklingCount) {
+            this.config.minSparklingCount = value;
+            const minSlider = document.getElementById('min-sparkling-count') as HTMLInputElement;
+            if (minSlider) {
+              minSlider.value = value.toString();
+            }
+            
+            const valueSpan = document.querySelector('label[for="min-sparkling-count"] + input + span');
+            if (valueSpan) {
+              valueSpan.textContent = value.toString();
+            }
+          }
+          if (value > this.config.maxSparklingCount) {
+            this.config.maxSparklingCount = value;
+            const maxSlider = document.getElementById('max-sparkling-count') as HTMLInputElement;
+            if (maxSlider) {
+              maxSlider.value = value.toString();
+            }
+            
+            const valueSpan = document.querySelector('label[for="max-sparkling-count"] + input + span');
+            if (valueSpan) {
+              valueSpan.textContent = value.toString();
+            }
+          }
+        }
+      ),
+      
+      createSliderControl(
+        'max-sparkling-count',
+        'Maximum Population',
+        10, 50, this.config.maxSparklingCount, 1,
+        (value) => {
+          this.config.maxSparklingCount = value;
+          if (this.config.initialSparklingCount > value) {
+            this.config.initialSparklingCount = value;
+            const maxSlider = document.getElementById('initial-sparkling-count') as HTMLInputElement;
+            if (maxSlider) {
+              maxSlider.value = value.toString();
+            }
+            
+            const valueSpan = document.querySelector('label[for="initial-sparkling-count"] + input + span');
+            if (valueSpan) {
+              valueSpan.textContent = value.toString();
+            }
+          }
+        }
+      ),
+      
+      createSliderControl(
+        'population-balance-range',
+        'Balance Range Tolerance',
+        1, 10, this.config.populationBalanceRange, 1,
+        (value) => this.config.populationBalanceRange = value
+      ),
+      
+      createSliderControl(
+        'population-growth-rate',
+        'Growth Rate',
+        0.01, 0.2, this.config.populationGrowthRate, 0.01,
+        (value) => this.config.populationGrowthRate = value
+      ),
+      
+      createSliderControl(
+        'population-decline-rate',
+        'Decline Rate',
+        0.01, 0.2, this.config.populationDeclineRate, 0.01,
+        (value) => this.config.populationDeclineRate = value
+      ),
+      
+      createSliderControl(
+        'resource-spawn-rate-per-sparkling',
+        'Resource Rate Per Sparkling',
+        0.0001, 0.001, this.config.resourceSpawnRatePerSparkling, 0.0001,
+        (value) => this.config.resourceSpawnRatePerSparkling = value
+      )
+    ];
+    
+    // Add sliders to container
+    populationSliders.forEach(slider => {
+      populationContainer.appendChild(slider.div);
+    });
+    
+    // Create a list of all control elements for enabling/disabling
+    const populationControls = [
+      autoPopControlCheckbox,
+      ...populationSliders.map(s => s.input)
+    ];
+    
+    // Set initial state of controls based on auto population control setting
+    populationSliders.forEach(slider => {
+      if (!this.config.autoPopulationControl) {
+        slider.input.disabled = true;
+        slider.input.style.opacity = '0.5';
+      }
+    });
+    
+    // Add Reset Population button
+    const resetPopulationButton = document.createElement('button');
+    resetPopulationButton.textContent = 'Reset Population';
+    resetPopulationButton.style.marginTop = '10px';
+    resetPopulationButton.style.padding = '5px 10px';
+    resetPopulationButton.addEventListener('click', () => this.resetPopulation());
+    
+    populationContainer.appendChild(resetPopulationButton);
+    
+    // Add the population controls to the main controls div
+    controlsDiv.appendChild(populationContainer);
+  }
+  
+  /**
+   * Reset the population to initial settings
+   */
+  private resetPopulation(): void {
+    // Re-create sparklings with initial count
+    this.createSparklings();
+    console.log(`Population reset to ${this.sparklings.length} Sparklings`);
+  }
+  
+  /**
+   * Update the population metrics display
+   */
+  private updatePopulationMetrics(): void {
+    if (!this.populationMetricsDiv) return;
+    
+    const currentPopulation = this.sparklings.length;
+    const targetPopulation = this.config.initialSparklingCount;
+    const resourceBalance = this.calculateResourceBalance();
+    
+    // Set balance color based on value
+    let balanceColor = 'white';
+    if (resourceBalance > 0.3) balanceColor = '#4caf50'; // Green for abundant
+    else if (resourceBalance < -0.3) balanceColor = '#f44336'; // Red for scarce
+    else balanceColor = '#ff9800'; // Orange for neutral
+    
+    // Create metrics HTML
+    this.populationMetricsDiv.innerHTML = `
+      <div>Current Population: <strong>${currentPopulation}</strong> / Target: <strong>${targetPopulation}</strong></div>
+      <div>Min: ${this.config.minSparklingCount} / Max: ${this.config.maxSparklingCount}</div>
+      <div>Resource Balance: <strong style="color: ${balanceColor}">${resourceBalance.toFixed(2)}</strong></div>
+    `;
   }
 
   /**
@@ -1078,6 +1557,13 @@ export class Simulation {
     if (tooltipElement) {
       tooltipElement.style.display = 'none';
     }
+  }
+
+  /**
+   * Check if a Sparkling is currently fading out
+   */
+  private isSparklingFadingOut(sparkling: Sparkling): boolean {
+    return sparkling.isFading();
   }
 
   /**

@@ -137,6 +137,16 @@ export class Sparkling extends SparklingCore {
     return super.getFadeoutProgress();
   }
   
+  /**
+   * Initiate a controlled fadeout for this Sparkling (used by population control)
+   * This is different from the resource depletion fadeout as it's externally triggered
+   */
+  public initiateControlledFadeout(): void {
+    if (this.isFadingOut) return; // Already fading out
+    
+    this.resources.initiateControlledFadeout();
+  }
+  
   // Methods from SparklingMovement
   public lookForResources(world: World, lookingForFood: boolean): void {
     this.movement.lookForResources(world, lookingForFood);

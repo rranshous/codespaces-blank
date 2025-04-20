@@ -84,6 +84,25 @@ export class SparklingResources {
   }
   
   /**
+   * Initiate a controlled fadeout process for population control
+   * This is triggered externally by the population control system
+   */
+  public initiateControlledFadeout(): void {
+    const core = this.sparklingCore as any;
+    
+    // Set fadeout flag and update state
+    core.isFadingOut = true;
+    core.state = SparklingState.FADING;
+    core.stateTimer = 0;
+    core.fadeoutProgress = 0;
+    
+    // Stop movement
+    core.velocity = { vx: 0, vy: 0 };
+    
+    console.log(`Sparkling ${core.id} has started controlled fadeout due to population control.`);
+  }
+  
+  /**
    * Update the fadeout progress
    * @param deltaTime Time elapsed since last update
    */

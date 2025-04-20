@@ -243,6 +243,15 @@ export class World {
   }
 
   /**
+   * Set the resource spawn rate dynamically
+   * Used by population control to adjust resource availability based on population
+   * @param rate New resource spawn rate
+   */
+  public setResourceSpawnRate(rate: number): void {
+    this.config.resourceSpawnRate = rate;
+  }
+
+  /**
    * Get a grid cell at specific coordinates
    */
   public getCell(x: number, y: number): GridCell | null {
