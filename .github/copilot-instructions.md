@@ -14,6 +14,8 @@ To understand the projects goals and the status of the work review the documents
 
 our development process will a big cycle (working on milestones) followed by small cycle (reviewing and refining the implementation)
 
-we will commit after each big and small cycle
+review the `docs/LESSONS.md` file before implementation cycles
 
 do not remove features unless specificly instructed to
+
+Keep files under 1000 lines
