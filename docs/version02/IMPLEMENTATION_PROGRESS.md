@@ -74,9 +74,9 @@ This document tracks the implementation progress of Version 2 features for the S
 
 **Status**: Completed
 **Completion Date**: April 20, 2025
-**Notes**: Implemented several important improvements to the UI and simulation parameters. Redesigned the UI layout to merge the control panel and debug panel into a single tabbed interface for better use of screen space. Fixed the resource spawn rate slider that was getting "stuck" at high values by improving its sensitivity and display. Significantly reduced the food consumption rate for Sparklings by 80% to prevent them from consuming food too quickly. Increased Sparkling movement speed by 2.5x to improve the simulation flow and make their movements more visible and engaging.
+**Notes**: Implemented several important improvements to the UI and simulation parameters. Redesigned the UI layout to create a draggable, minimizable control panel that never blocks the world map view. The control panel is now positioned in the top-right corner by default and can be dragged anywhere on the screen. Added a minimize button to collapse the panel when needed and organized controls into tabs for better space efficiency. Fixed the resource spawn rate slider functionality that was getting "stuck" at high values by improving its sensitivity and display. Significantly reduced the food consumption rate for Sparklings by 80% to prevent them from consuming food too quickly. Increased Sparkling movement speed by 2.5x to improve the simulation flow and make their movements more visible and engaging.
 
-**Context**: These improvements address user feedback about the simulation interface and parameters. The UI redesign creates a more intuitive and space-efficient control system, while the parameter adjustments create a more balanced and engaging simulation experience. Reduced food consumption makes Sparklings more sustainable, and increased movement speed makes the simulation more dynamic and easier to observe. These changes significantly improve the user experience and the overall balance of the simulation ecosystem.
+**Context**: These improvements address user feedback about the simulation interface and parameters. The redesigned UI ensures that users can always see the entire world map while maintaining full access to controls. The draggable panel provides flexibility to position controls wherever they don't obstruct important simulation elements. Parameter adjustments create a more balanced and engaging simulation experience - reduced food consumption makes Sparklings more sustainable, and increased movement speed makes the simulation more dynamic and easier to observe. These changes significantly improve the user experience and the overall balance of the simulation ecosystem.
 
 ## Phase 3: Enhanced Visualization & Analytics
 
@@ -128,7 +128,7 @@ This document tracks the implementation progress of Version 2 features for the S
 
 ### April 20, 2025
 - Completed Milestone 2.5: UI and Simulation Parameter Improvements
-- Redesigned UI layout to merge control panel and debug panel into a tabbed interface
+- Redesigned UI layout to create a draggable, minimizable control panel that never blocks the world map view
 - Fixed resource spawn rate slider functionality that was getting stuck at high values
 - Significantly reduced food consumption rate by 80% to prevent Sparklings from depleting food too quickly
 - Increased Sparkling movement speed by 2.5x to improve simulation flow and visibility

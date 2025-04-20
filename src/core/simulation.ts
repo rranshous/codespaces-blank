@@ -937,7 +937,7 @@ export class Simulation {
     controlPanel.id = 'unified-control-panel';
     controlPanel.style.position = 'absolute';
     controlPanel.style.top = '10px';
-    controlPanel.style.left = '10px';
+    controlPanel.style.right = '10px'; // Changed from left to right
     controlPanel.style.maxWidth = '300px';
     controlPanel.style.padding = '10px';
     controlPanel.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
@@ -948,6 +948,93 @@ export class Simulation {
     controlPanel.style.overflowY = 'auto';
     controlPanel.style.fontFamily = 'Arial, sans-serif';
     controlPanel.style.fontSize = '14px';
+    controlPanel.style.cursor = 'move'; // Indicate it's draggable
+    controlPanel.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.5)'; // Add shadow for better visibility
+    
+    // Add minimize/expand functionality
+    const headerDiv = document.createElement('div');
+    headerDiv.style.display = 'flex';
+    headerDiv.style.justifyContent = 'space-between';
+    headerDiv.style.alignItems = 'center';
+    headerDiv.style.marginBottom = '10px';
+    headerDiv.style.borderBottom = '1px solid #555';
+    headerDiv.style.paddingBottom = '5px';
+    
+    const titleSpan = document.createElement('span');
+    titleSpan.textContent = 'Simulation Controls';
+    titleSpan.style.fontWeight = 'bold';
+    
+    const minimizeButton = document.createElement('button');
+    minimizeButton.textContent = '-';
+    minimizeButton.style.background = 'transparent';
+    minimizeButton.style.border = '1px solid #555';
+    minimizeButton.style.color = 'white';
+    minimizeButton.style.width = '24px';
+    minimizeButton.style.height = '24px';
+    minimizeButton.style.cursor = 'pointer';
+    minimizeButton.style.borderRadius = '3px';
+    minimizeButton.style.display = 'flex';
+    minimizeButton.style.justifyContent = 'center';
+    minimizeButton.style.alignItems = 'center';
+    minimizeButton.title = 'Minimize';
+    
+    // Variable to hold the content div for toggling
+    const contentDiv = document.createElement('div');
+    contentDiv.id = 'control-panel-content';
+    
+    headerDiv.appendChild(titleSpan);
+    headerDiv.appendChild(minimizeButton);
+    
+    // Make the control panel draggable
+    let isDragging = false;
+    let offsetX = 0;
+    let offsetY = 0;
+    
+    headerDiv.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      offsetX = e.clientX - controlPanel.getBoundingClientRect().left;
+      offsetY = e.clientY - controlPanel.getBoundingClientRect().top;
+      controlPanel.style.cursor = 'grabbing';
+    });
+    
+    document.addEventListener('mousemove', (e) => {
+      if (isDragging) {
+        const x = e.clientX - offsetX;
+        const y = e.clientY - offsetY;
+        
+        // Keep the panel within the viewport
+        const maxX = window.innerWidth - controlPanel.offsetWidth;
+        const maxY = window.innerHeight - controlPanel.offsetHeight;
+        
+        controlPanel.style.left = `${Math.max(0, Math.min(x, maxX))}px`;
+        controlPanel.style.top = `${Math.max(0, Math.min(y, maxY))}px`;
+        controlPanel.style.right = 'auto'; // Clear right positioning when dragging
+      }
+    });
+    
+    document.addEventListener('mouseup', () => {
+      isDragging = false;
+      controlPanel.style.cursor = 'move';
+    });
+    
+    // Toggle minimize/expand
+    minimizeButton.addEventListener('click', () => {
+      if (contentDiv.style.display === 'none') {
+        contentDiv.style.display = 'block';
+        minimizeButton.textContent = '-';
+        minimizeButton.title = 'Minimize';
+        controlPanel.style.maxHeight = '80vh';
+      } else {
+        contentDiv.style.display = 'none';
+        minimizeButton.textContent = '+';
+        minimizeButton.title = 'Expand';
+        controlPanel.style.maxHeight = 'auto';
+      }
+    });
+    
+    // Add the header to the panel
+    controlPanel.appendChild(headerDiv);
+    controlPanel.appendChild(contentDiv);
     
     // Create tabs for different control sections
     const tabContainer = document.createElement('div');
@@ -1008,7 +1095,7 @@ export class Simulation {
       
       // Add to container
       tabContainer.appendChild(tabButton);
-      controlPanel.appendChild(tabContent);
+      contentDiv.appendChild(tabContent);
     });
     
     // Set first tab as active
@@ -1018,7 +1105,7 @@ export class Simulation {
       firstTab.style.fontWeight = 'bold';
     }
     
-    controlPanel.insertBefore(tabContainer, controlPanel.firstChild);
+    contentDiv.insertBefore(tabContainer, contentDiv.firstChild);
     
     // Basic controls section - Move existing controls here
     const basicContent = tabContents['tab-basic'];
