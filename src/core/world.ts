@@ -310,4 +310,26 @@ export class World {
       height: this.gridHeight
     };
   }
+
+  /**
+   * Find resource-rich cells in the world
+   * @param topCount The number of top resource cells to return
+   * @returns Array of grid cells sorted by resource richness (top richest cells first)
+   */
+  public findResourceRichCells(topCount: number = 5): GridCell[] {
+    // Create a copy of all cells
+    const allCells = this.grid.flat();
+    
+    // Sort cells based on total resources (food + neural energy)
+    const sortedCells = allCells.sort((a, b) => {
+      const resourcesA = a.resources + a.neuralEnergy;
+      const resourcesB = b.resources + b.neuralEnergy;
+      return resourcesB - resourcesA; // Sort from highest to lowest
+    });
+    
+    // Return the top N cells with resources
+    return sortedCells
+      .filter(cell => cell.resources > 0 || cell.neuralEnergy > 0) // Only cells with resources
+      .slice(0, topCount);
+  }
 }

@@ -379,6 +379,7 @@ export class Simulation {
   
   /**
    * Remove Sparklings that have completed their fadeout process
+   * and spawn new ones to replace them
    */
   private removeCompletedFadeouts(): void {
     const fadedSparklings = this.sparklings.filter(sparkling => sparkling.shouldBeRemoved());
@@ -391,6 +392,152 @@ export class Simulation {
       
       // Remove the faded Sparklings from the array
       this.sparklings = this.sparklings.filter(sparkling => !sparkling.shouldBeRemoved());
+      
+      // Spawn new Sparklings to replace the faded ones
+      this.spawnNewSparklings(fadedSparklings.length);
+    }
+  }
+  
+  /**
+   * Spawn new Sparklings to replace those that have faded out
+   * @param count Number of new Sparklings to spawn
+   */
+  private spawnNewSparklings(count: number): void {
+    // Get the next available ID (max ID + 1)
+    const nextId = this.getNextSparklingId();
+    
+    // Create the new sparklings
+    for (let i = 0; i < count; i++) {
+      // Generate a position preferably near resources but not too close to existing Sparklings
+      const position = this.findGoodSpawningPosition();
+      
+      // Determine a behavioral profile for the new Sparkling
+      const profile = this.determineNewSparklingProfile();
+      
+      // Create the new Sparkling with a unique ID
+      const newSparkling = new Sparkling(nextId + i, position, this.config, profile);
+      
+      // Add a small "spawn" animation effect
+      // This would be implemented in SparklingRenderer
+      (newSparkling as any).isNewlySpawned = true;
+      
+      // Add it to the simulation
+      this.sparklings.push(newSparkling);
+      
+      console.log(`Spawned new Sparkling #${nextId + i} at position (${position.x.toFixed(1)}, ${position.y.toFixed(1)}) with profile ${profile}`);
+    }
+  }
+  
+  /**
+   * Find the next available ID for a new Sparkling
+   */
+  private getNextSparklingId(): number {
+    if (this.sparklings.length === 0) {
+      return 0;
+    }
+    
+    // Find the maximum ID currently in use
+    const maxId = Math.max(...this.sparklings.map(s => s.getId()));
+    return maxId + 1;
+  }
+  
+  /**
+   * Find a good position to spawn a new Sparkling
+   * - Preferably near resources
+   * - Not too close to existing Sparklings
+   * - Within the world bounds
+   */
+  private findGoodSpawningPosition(): Position {
+    const minDistanceToOtherSparklings = 50; // Minimum distance to other Sparklings
+    const maxAttempts = 20; // Maximum number of attempts to find a good position
+    
+    // Try to find a position near resources first
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      // Find resource-rich areas to prioritize for spawning
+      const resourceCells = this.world.findResourceRichCells(5); // Get top 5 resource cells
+      
+      if (resourceCells.length > 0) {
+        // Pick a random cell from the top resource cells
+        const randomIndex = Math.floor(Math.random() * resourceCells.length);
+        const cell = resourceCells[randomIndex];
+        
+        // Add some randomness to the position within the cell
+        const position: Position = {
+          x: cell.x * 20 + 5 + Math.random() * 10, // Center of cell + random offset
+          y: cell.y * 20 + 5 + Math.random() * 10
+        };
+        
+        // Check if this position is far enough from existing Sparklings
+        if (this.isPositionFarEnoughFromSparklings(position, minDistanceToOtherSparklings)) {
+          return position;
+        }
+      }
+    }
+    
+    // If we couldn't find a good position near resources, just find any position far from other Sparklings
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const position: Position = {
+        x: Math.random() * this.config.worldWidth,
+        y: Math.random() * this.config.worldHeight
+      };
+      
+      if (this.isPositionFarEnoughFromSparklings(position, minDistanceToOtherSparklings)) {
+        return position;
+      }
+    }
+    
+    // If all else fails, return a totally random position
+    return {
+      x: Math.random() * this.config.worldWidth,
+      y: Math.random() * this.config.worldHeight
+    };
+  }
+  
+  /**
+   * Check if a position is far enough from all existing Sparklings
+   */
+  private isPositionFarEnoughFromSparklings(position: Position, minDistance: number): boolean {
+    for (const sparkling of this.sparklings) {
+      const sparklingPos = sparkling.getPosition();
+      const dx = position.x - sparklingPos.x;
+      const dy = position.y - sparklingPos.y;
+      const distanceSquared = dx * dx + dy * dy;
+      
+      if (distanceSquared < minDistance * minDistance) {
+        return false; // Too close to an existing Sparkling
+      }
+    }
+    
+    return true; // Far enough from all Sparklings
+  }
+  
+  /**
+   * Determine a behavioral profile for a new Sparkling
+   * This could later be enhanced to create inheritance from successful Sparklings
+   */
+  private determineNewSparklingProfile(): BehavioralProfile {
+    // For now, distribute profiles with some randomization
+    // In the future, this would take into account successful Sparklings
+    const profileRoll = Math.random();
+    
+    if (profileRoll < 0.3) {
+      // 30% Gatherers (food focused)
+      return BehavioralProfile.GATHERER;
+    } else if (profileRoll < 0.5) {
+      // 20% Energy Seekers
+      return BehavioralProfile.ENERGY_SEEKER;
+    } else if (profileRoll < 0.7) {
+      // 20% Explorers
+      return BehavioralProfile.EXPLORER;
+    } else if (profileRoll < 0.85) {
+      // 15% Balanced
+      return BehavioralProfile.BALANCED;
+    } else if (profileRoll < 0.95) {
+      // 10% Cautious
+      return BehavioralProfile.CAUTIOUS;
+    } else {
+      // 5% Social
+      return BehavioralProfile.SOCIAL;
     }
   }
 

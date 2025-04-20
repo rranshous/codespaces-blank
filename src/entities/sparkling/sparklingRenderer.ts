@@ -17,49 +17,170 @@ export class SparklingRenderer {
    * Render the Sparkling on the canvas
    */
   public render(context: CanvasRenderingContext2D, debug: boolean = false): void {
-    // Get necessary properties from the core
-    const position = this.sparklingCore.getPosition();
-    const state = this.sparklingCore.getState();
-    const resources = this.sparklingCore.getResourceLevels();
-    const parameters = this.sparklingCore.getParameters();
-    const memory = this.sparklingCore.getMemory();
-    
-    // Calculate resource ratios
-    const foodRatio = resources.food / this.sparklingCore.getMaxFood();
-    const energyRatio = resources.neuralEnergy / this.sparklingCore.getMaxNeuralEnergy();
-    
-    // Get private properties using "any" type (this is a workaround for refactoring)
     const core = this.sparklingCore as any;
-    const color = core.color;
-    const totalTime = core.totalTime;
-    const inferenceStatus = core.inferenceStatus;
-    const inferenceTimer = core.inferenceTimer;
-    const lastInferenceTime = core.lastInferenceTime;
-    const lastInferenceReasoning = core.lastInferenceReasoning;
-    const homePosition = core.homePosition;
     
-    // Check if the sparkling is fading out and get fadeout progress
-    const isFading = core.isFadingOut || false;
-    const fadeoutProgress = core.fadeoutProgress || 0;
+    // If this Sparkling is newly spawned, render spawn animation
+    if (core.isNewlySpawned) {
+      this.renderSpawnAnimation(context);
+      
+      // Clear the newly spawned flag after a short time
+      if (!core.spawnAnimationTimer) {
+        core.spawnAnimationTimer = 0;
+      } else {
+        core.spawnAnimationTimer += 0.016; // Approximate for one frame at 60 FPS
+        if (core.spawnAnimationTimer > 2) { // 2 seconds for the animation
+          core.isNewlySpawned = false;
+          core.spawnAnimationTimer = 0;
+        }
+      }
+    }
     
-    // Calculate the body size based on food level
-    const bodySize = 10 + foodRatio * 5;
-    
-    // If the Sparkling is fading out, apply special rendering
-    if (isFading) {
-      this.renderFadingOut(context, position, color, totalTime, fadeoutProgress, bodySize);
+    // If the Sparkling is fading out, render with appropriate opacity
+    if (core.isFadingOut) {
+      this.renderFadingOut(context, debug);
       return;
     }
     
+    // Regular rendering for normal Sparklings
+    this.renderNormal(context, debug);
+  }
+  
+  /**
+   * Render spawn animation for newly spawned Sparklings
+   */
+  private renderSpawnAnimation(context: CanvasRenderingContext2D): void {
+    const core = this.sparklingCore as any;
+    const position = core.position;
+    
+    // Get animation progress from 0 to 1
+    const animProgress = Math.min(1, core.spawnAnimationTimer / 2);
+    
+    // Calculate size that grows from 0 to full size
+    const targetSize = 10 + (core.food / core.stats.maxFood) * 5;
+    const currentSize = targetSize * animProgress;
+    
+    // Opacity that increases during animation
+    const opacity = 0.3 + 0.7 * animProgress;
+    
+    // Draw expanding rings
+    const ringCount = 3;
+    for (let i = 0; i < ringCount; i++) {
+      const ringProgress = Math.max(0, Math.min(1, (animProgress * 2) - (i * 0.3)));
+      if (ringProgress <= 0) continue;
+      
+      const ringSize = currentSize + (targetSize * 2 * ringProgress);
+      const ringOpacity = 0.7 * (1 - ringProgress) * opacity;
+      
+      context.beginPath();
+      context.arc(position.x, position.y, ringSize, 0, Math.PI * 2);
+      context.fillStyle = `rgba(${parseInt(core.color.substr(1, 2), 16)}, ${parseInt(core.color.substr(3, 2), 16)}, ${parseInt(core.color.substr(5, 2), 16)}, ${ringOpacity})`;
+      context.fill();
+    }
+    
+    // Draw main body with growing size
+    context.beginPath();
+    context.arc(position.x, position.y, currentSize, 0, Math.PI * 2);
+    context.fillStyle = `rgba(${parseInt(core.color.substr(1, 2), 16)}, ${parseInt(core.color.substr(3, 2), 16)}, ${parseInt(core.color.substr(5, 2), 16)}, ${opacity})`;
+    context.fill();
+    
+    // Draw sparkles
+    const sparkleCount = 8;
+    for (let i = 0; i < sparkleCount; i++) {
+      const angle = (i / sparkleCount) * Math.PI * 2;
+      const sparkleProgress = Math.min(1, animProgress * 2);
+      const distance = targetSize * 3 * sparkleProgress;
+      
+      const sparkleX = position.x + Math.cos(angle) * distance;
+      const sparkleY = position.y + Math.sin(angle) * distance;
+      const sparkleSize = 2 * (1 - sparkleProgress);
+      
+      context.beginPath();
+      context.arc(sparkleX, sparkleY, sparkleSize, 0, Math.PI * 2);
+      context.fillStyle = 'rgba(255, 255, 255, 0.7)';
+      context.fill();
+    }
+    
+    // Draw "New" text above the Sparkling
+    if (animProgress > 0.3) {
+      const textOpacity = Math.min(1, (animProgress - 0.3) * 2);
+      context.font = '10px Arial';
+      context.fillStyle = `rgba(255, 255, 255, ${textOpacity})`;
+      context.textAlign = 'center';
+      context.fillText('New', position.x, position.y - targetSize - 10);
+    }
+  }
+  
+  /**
+   * Render Sparkling that is fading out
+   */
+  private renderFadingOut(context: CanvasRenderingContext2D, debug: boolean = false): void {
+    const core = this.sparklingCore as any;
+    const position = core.position;
+    
+    // Calculate the body size based on food level
+    const bodySize = 10 + (core.food / core.stats.maxFood) * 5;
+    
+    // Calculate opacity based on fadeout progress
+    const opacity = Math.max(0, 1 - core.fadeoutProgress);
+    
+    // Draw the main body with reduced opacity
+    context.fillStyle = `rgba(${parseInt(core.color.substr(1, 2), 16)}, ${parseInt(core.color.substr(3, 2), 16)}, ${parseInt(core.color.substr(5, 2), 16)}, ${opacity})`;
+    context.beginPath();
+    context.arc(position.x, position.y, bodySize, 0, Math.PI * 2);
+    context.fill();
+    
+    // Draw a glow effect that expands as the Sparkling fades out
+    const glowSize = bodySize + (10 * core.fadeoutProgress);
+    context.fillStyle = `rgba(${parseInt(core.color.substr(1, 2), 16)}, ${parseInt(core.color.substr(3, 2), 16)}, ${parseInt(core.color.substr(5, 2), 16)}, ${0.2 * opacity})`;
+    context.beginPath();
+    context.arc(position.x, position.y, glowSize, 0, Math.PI * 2);
+    context.fill();
+    
+    // Draw dissipating particles
+    const particleCount = Math.floor(10 * core.fadeoutProgress);
+    for (let i = 0; i < particleCount; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const distance = bodySize + (Math.random() * 20 * core.fadeoutProgress);
+      
+      const particleX = position.x + Math.cos(angle) * distance;
+      const particleY = position.y + Math.sin(angle) * distance;
+      const particleSize = 1 + Math.random() * 2;
+      
+      context.beginPath();
+      context.arc(particleX, particleY, particleSize, 0, Math.PI * 2);
+      context.fillStyle = `rgba(${parseInt(core.color.substr(1, 2), 16)}, ${parseInt(core.color.substr(3, 2), 16)}, ${parseInt(core.color.substr(5, 2), 16)}, ${0.5 * opacity})`;
+      context.fill();
+    }
+    
+    // Draw "Fading" text
+    if (debug) {
+      context.font = '10px Arial';
+      context.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+      context.textAlign = 'center';
+      context.fillText('Fading', position.x, position.y - bodySize - 5);
+    }
+  }
+  
+  /**
+   * Render normal (non-fading) Sparkling
+   */
+  private renderNormal(context: CanvasRenderingContext2D, debug: boolean = false): void {
+    const core = this.sparklingCore as any;
+    const position = core.position;
+    
+    // Calculate the body size based on food level
+    const bodySize = 10 + (core.food / core.stats.maxFood) * 5;
+    const foodRatio = core.food / core.stats.maxFood;
+    
     // Determine body color based on food level - add pulsing effect for low food
-    let bodyColor = color;
-    if (foodRatio < parameters.criticalHungerThreshold) {
+    let bodyColor = core.color;
+    if (foodRatio < core.parameters.criticalHungerThreshold) {
       // Critical hunger - pulsing red tint
-      const pulseIntensity = 0.4 + 0.3 * Math.sin(totalTime * 4);
-      bodyColor = this.blendColors(color, `rgba(255, 50, 0, ${pulseIntensity})`);
-    } else if (foodRatio < parameters.hungerThreshold) {
+      const pulseIntensity = 0.4 + 0.3 * Math.sin(core.totalTime * 4);
+      bodyColor = this.blendColors(core.color, `rgba(255, 50, 0, ${pulseIntensity})`);
+    } else if (foodRatio < core.parameters.hungerThreshold) {
       // Low food - slight yellow tint
-      bodyColor = this.blendColors(color, 'rgba(255, 200, 0, 0.3)');
+      bodyColor = this.blendColors(core.color, 'rgba(255, 200, 0, 0.3)');
     }
     
     // Draw the main body
@@ -69,6 +190,7 @@ export class SparklingRenderer {
     context.fill();
     
     // Draw a glow effect for neural energy level
+    const energyRatio = core.neuralEnergy / core.stats.maxNeuralEnergy;
     if (energyRatio > 0) {
       // Calculate the size of the energy glow
       const glowSize = bodySize + 5 * energyRatio;
@@ -78,10 +200,10 @@ export class SparklingRenderer {
       let glowColor = `rgba(150, 50, 200, ${glowOpacity})`;
       
       // Modify the glow based on inference status
-      if (inferenceStatus !== InferenceStatus.IDLE) {
+      if (core.inferenceStatus !== "IDLE") {
         // Pulsing effect during inference
-        const pulseRate = inferenceStatus === InferenceStatus.THINKING ? 4 : 2;
-        const pulseIntensity = 0.5 + 0.5 * Math.sin(totalTime * pulseRate);
+        const pulseRate = core.inferenceStatus === "THINKING" ? 4 : 2;
+        const pulseIntensity = 0.5 + 0.5 * Math.sin(core.totalTime * pulseRate);
         
         glowOpacity = 0.4 * energyRatio * pulseIntensity;
         glowColor = `rgba(180, 70, 220, ${glowOpacity})`;
@@ -93,10 +215,10 @@ export class SparklingRenderer {
       context.fill();
       
       // Draw secondary outer glow for high neural energy
-      if (energyRatio > 0.7 || inferenceStatus !== InferenceStatus.IDLE) {
+      if (energyRatio > 0.7 || core.inferenceStatus !== "IDLE") {
         const outerGlowSize = glowSize + 4;
-        const outerOpacity = inferenceStatus !== InferenceStatus.IDLE ? 
-                            0.2 * (0.7 + 0.3 * Math.sin(totalTime * 5)) :
+        const outerOpacity = core.inferenceStatus !== "IDLE" ? 
+                            0.2 * (0.7 + 0.3 * Math.sin(core.totalTime * 5)) :
                             0.1 * energyRatio;
         
         context.fillStyle = `rgba(160, 60, 220, ${outerOpacity})`;
@@ -106,13 +228,12 @@ export class SparklingRenderer {
       }
       
       // Draw "ready for inference" indicator when close to threshold
-      if (energyRatio >= 0.6 && 
-          energyRatio < parameters.inferenceThreshold / this.sparklingCore.getMaxNeuralEnergy() && 
-          inferenceStatus === InferenceStatus.IDLE && 
-          totalTime - lastInferenceTime >= parameters.inferenceInterval) {
+      if (energyRatio >= 0.6 && energyRatio < core.parameters.inferenceThreshold / core.stats.maxNeuralEnergy && 
+          core.inferenceStatus === "IDLE" && 
+          core.totalTime - core.lastInferenceTime >= core.parameters.inferenceInterval) {
         // Draw a dotted circle to indicate approaching inference threshold
         const readyGlowSize = glowSize + 6;
-        context.strokeStyle = `rgba(180, 100, 240, ${0.3 + 0.2 * Math.sin(totalTime * 3)})`;
+        context.strokeStyle = `rgba(180, 100, 240, ${0.3 + 0.2 * Math.sin(core.totalTime * 3)})`;
         context.setLineDash([3, 3]);
         context.beginPath();
         context.arc(position.x, position.y, readyGlowSize, 0, Math.PI * 2);
@@ -121,7 +242,7 @@ export class SparklingRenderer {
         
         // Show percentage to threshold
         if (debug) {
-          const percentToThreshold = (resources.neuralEnergy / parameters.inferenceThreshold * 100).toFixed(0);
+          const percentToThreshold = (core.neuralEnergy / core.parameters.inferenceThreshold * 100).toFixed(0);
           context.fillStyle = 'rgba(180, 100, 240, 0.9)';
           context.font = '8px Arial';
           context.textAlign = 'center';
@@ -132,54 +253,9 @@ export class SparklingRenderer {
           );
         }
       }
-      
-      // Draw neural energy level indicator
-      if (debug) {
-        // Draw neural energy level bar
-        const barWidth = 24;
-        const barHeight = 3;
-        const barX = position.x - barWidth / 2;
-        const barY = position.y - bodySize - 15;
-        
-        // Background
-        context.fillStyle = 'rgba(0, 0, 0, 0.5)';
-        context.fillRect(barX, barY, barWidth, barHeight);
-        
-        // Energy level
-        const energyColor = energyRatio >= parameters.inferenceThreshold / this.sparklingCore.getMaxNeuralEnergy() ? 
-                            'rgba(180, 100, 240, 0.8)' :  // At or above threshold
-                            energyRatio >= 0.6 ? 
-                            'rgba(150, 70, 220, 0.8)' :   // Approaching threshold
-                            `rgba(150, 50, 200, 0.8)`;    // Normal level
-        
-        context.fillStyle = energyColor;
-        context.fillRect(barX, barY, barWidth * energyRatio, barHeight);
-        
-        // Inference threshold marker
-        const thresholdX = barX + (parameters.inferenceThreshold / this.sparklingCore.getMaxNeuralEnergy()) * barWidth;
-        context.strokeStyle = 'rgba(255, 255, 255, 0.7)';
-        context.beginPath();
-        context.moveTo(thresholdX, barY - 1);
-        context.lineTo(thresholdX, barY + barHeight + 1);
-        context.stroke();
-        
-        // Show energy level as percentage when close to threshold or during inference
-        if ((energyRatio >= 0.6 || inferenceStatus !== InferenceStatus.IDLE) && 
-            !(energyRatio >= parameters.inferenceThreshold / this.sparklingCore.getMaxNeuralEnergy() && inferenceStatus === InferenceStatus.IDLE)) {
-          context.fillStyle = 'rgba(255, 255, 255, 0.9)';
-          context.font = '7px Arial';
-          context.textAlign = 'center';
-          context.fillText(
-            `${(energyRatio * 100).toFixed(0)}%`,
-            barX + barWidth / 2,
-            barY - 2
-          );
-        }
-      }
     }
     
-    // Always show food level indicators
-    // Draw food level bar - always visible unlike energy bar
+    // Draw food level indicators - always visible 
     const foodBarWidth = 24;
     const foodBarHeight = 3;
     const foodBarX = position.x - foodBarWidth / 2;
@@ -191,21 +267,21 @@ export class SparklingRenderer {
     
     // Food level with color based on level
     let foodBarColor;
-    if (foodRatio < parameters.criticalHungerThreshold) {
+    if (foodRatio < core.parameters.criticalHungerThreshold) {
       // Critical - red with enhanced pulsing effect for the entire bar
-      const pulseIntensity = 0.7 + 0.3 * Math.sin(totalTime * 4);
+      const pulseIntensity = 0.7 + 0.3 * Math.sin(core.totalTime * 4);
       foodBarColor = `rgba(255, 50, 0, ${pulseIntensity})`;
       
       // Add a pulsing outline around the entire food bar for critical state
-      const outlinePulse = 0.5 + 0.5 * Math.sin(totalTime * 5);
+      const outlinePulse = 0.5 + 0.5 * Math.sin(core.totalTime * 5);
       context.strokeStyle = `rgba(255, 0, 0, ${outlinePulse})`;
       context.lineWidth = 1.5;
       context.strokeRect(foodBarX - 1, foodBarY - 1, foodBarWidth + 2, foodBarHeight + 2);
       context.lineWidth = 1;
-    } else if (foodRatio < parameters.hungerThreshold) {
+    } else if (foodRatio < core.parameters.hungerThreshold) {
       // Low - yellow/orange
       foodBarColor = 'rgba(255, 150, 0, 0.8)';
-    } else if (foodRatio > parameters.foodSatiationThreshold) {
+    } else if (foodRatio > core.parameters.foodSatiationThreshold) {
       // High - green
       foodBarColor = 'rgba(76, 175, 80, 0.8)';
     } else {
@@ -218,7 +294,7 @@ export class SparklingRenderer {
     
     // Draw threshold markers
     // Critical threshold
-    let thresholdX = foodBarX + (parameters.criticalHungerThreshold) * foodBarWidth;
+    let thresholdX = foodBarX + (core.parameters.criticalHungerThreshold) * foodBarWidth;
     context.strokeStyle = 'rgba(255, 50, 0, 0.7)';
     context.beginPath();
     context.moveTo(thresholdX, foodBarY - 1);
@@ -226,7 +302,7 @@ export class SparklingRenderer {
     context.stroke();
     
     // Hunger threshold
-    thresholdX = foodBarX + (parameters.hungerThreshold) * foodBarWidth;
+    thresholdX = foodBarX + (core.parameters.hungerThreshold) * foodBarWidth;
     context.strokeStyle = 'rgba(255, 150, 0, 0.7)';
     context.beginPath();
     context.moveTo(thresholdX, foodBarY - 1);
@@ -234,8 +310,8 @@ export class SparklingRenderer {
     context.stroke();
     
     // Show food percentage when low or in debug mode
-    if (foodRatio < parameters.hungerThreshold || debug) {
-      context.fillStyle = foodRatio < parameters.criticalHungerThreshold ? 
+    if (foodRatio < core.parameters.hungerThreshold || debug) {
+      context.fillStyle = foodRatio < core.parameters.criticalHungerThreshold ? 
                           'rgba(255, 100, 100, 0.9)' : 'rgba(255, 255, 255, 0.9)';
       context.font = '7px Arial';
       context.textAlign = 'center';
@@ -247,10 +323,10 @@ export class SparklingRenderer {
     }
     
     // Draw inference status indicator if actively inferring
-    if (inferenceStatus !== InferenceStatus.IDLE) {
+    if (core.inferenceStatus !== "IDLE") {
       // Draw thinking animation
-      const statusText = this.getInferenceStatusText(inferenceStatus);
-      const dotsCount = Math.floor((inferenceTimer * 2) % 4);
+      const statusText = this.getInferenceStatusText(core.inferenceStatus);
+      const dotsCount = Math.floor((core.inferenceTimer * 2) % 4);
       const dots = '.'.repeat(dotsCount);
       
       context.fillStyle = 'rgba(255, 255, 255, 0.9)';
@@ -261,29 +337,10 @@ export class SparklingRenderer {
         position.x, 
         position.y - bodySize - 10
       );
-      
-      // Draw last inference reasoning if available and in debug mode
-      if (debug && lastInferenceReasoning && inferenceStatus === InferenceStatus.PROCESSING) {
-        const maxReasoningLength = 60;
-        const shortenedReasoning = lastInferenceReasoning.length > maxReasoningLength 
-          ? lastInferenceReasoning.substring(0, maxReasoningLength) + '...'
-          : lastInferenceReasoning;
-        
-        context.fillStyle = 'rgba(255, 255, 255, 0.7)';
-        context.font = '7px Arial';
-        const lines = this.wrapText(shortenedReasoning, 120);
-        lines.forEach((line, index) => {
-          context.fillText(
-            line,
-            position.x,
-            position.y + bodySize + 15 + (index * 8)
-          );
-        });
-      }
     } else {
       // Draw "Inference Ready" text when at or above threshold
-      if (energyRatio >= parameters.inferenceThreshold / this.sparklingCore.getMaxNeuralEnergy() && 
-          totalTime - lastInferenceTime >= parameters.inferenceInterval) {
+      if (energyRatio >= core.parameters.inferenceThreshold / core.stats.maxNeuralEnergy && 
+          core.totalTime - core.lastInferenceTime >= core.parameters.inferenceInterval) {
         context.fillStyle = 'rgba(180, 100, 240, 0.9)';
         context.font = '8px Arial';
         context.textAlign = 'center';
@@ -298,113 +355,63 @@ export class SparklingRenderer {
         context.font = '8px Arial';
         context.textAlign = 'center';
         context.fillText(
-          this.getStateLabel(state), 
+          this.getStateLabel(core.state), 
           position.x, 
           position.y - bodySize - 10
         );
       }
     }
     
-    // Draw home point marker
-    if (homePosition) {
-      const parsedColor = this.parseColor(color);
-      context.strokeStyle = `rgba(${parsedColor.r}, ${parsedColor.g}, ${parsedColor.b}, 0.3)`;
-      context.setLineDash([2, 2]);
-      context.beginPath();
-      context.moveTo(position.x, position.y);
-      context.lineTo(homePosition.x, homePosition.y);
-      context.stroke();
-      context.setLineDash([]);
-      
-      // Draw a little house/home symbol
-      context.fillStyle = color;
-      context.beginPath();
-      context.arc(homePosition.x, homePosition.y, 3, 0, Math.PI * 2);
-      context.fill();
-    }
-    
-    // If in debug mode, draw additional information
+    // Draw territory and home indicators if debug is enabled
     if (debug) {
-      this.renderParameterIndicators(context, position, parameters);
-      this.renderMemory(context, position, memory, color, totalTime);
-    }
-  }
-  
-  /**
-   * Render a Sparkling that is fading out
-   */
-  private renderFadingOut(
-    context: CanvasRenderingContext2D, 
-    position: Position, 
-    color: string, 
-    totalTime: number,
-    fadeoutProgress: number,
-    bodySize: number
-  ): void {
-    // Calculate opacity based on fadeout progress (1.0 -> 0.0)
-    const opacity = 1.0 - fadeoutProgress;
-    
-    // Parse the color to get RGB values
-    const parsedColor = this.parseColor(color);
-    
-    // Draw fading body with decreasing opacity
-    context.fillStyle = `rgba(${parsedColor.r}, ${parsedColor.g}, ${parsedColor.b}, ${opacity})`;
-    context.beginPath();
-    context.arc(position.x, position.y, bodySize, 0, Math.PI * 2);
-    context.fill();
-    
-    // Draw dissipating particles as fadeout progresses
-    const particleCount = Math.floor(fadeoutProgress * 20);
-    
-    for (let i = 0; i < particleCount; i++) {
-      // Calculate particle position - particles move outward as fadeout progresses
-      const angle = (i / particleCount) * Math.PI * 2 + totalTime * 0.5;
-      const distance = bodySize * (0.5 + fadeoutProgress * 3);
-      const particleX = position.x + Math.cos(angle) * distance;
-      const particleY = position.y + Math.sin(angle) * distance;
+      // Draw territory circle if territory is defined
+      if (core.territoryCenter) {
+        context.strokeStyle = `rgba(${parseInt(core.color.substr(1, 2), 16)}, ${parseInt(core.color.substr(3, 2), 16)}, ${parseInt(core.color.substr(5, 2), 16)}, 0.3)`;
+        context.setLineDash([2, 2]);
+        context.beginPath();
+        context.arc(core.territoryCenter.x, core.territoryCenter.y, core.territoryRadius, 0, Math.PI * 2);
+        context.stroke();
+        context.setLineDash([]);
+      }
       
-      // Calculate particle size - particles get smaller as they move outward
-      const particleSize = 3 * (1 - fadeoutProgress * 0.7);
+      // Draw home point marker
+      if (core.homePosition) {
+        context.strokeStyle = `rgba(${parseInt(core.color.substr(1, 2), 16)}, ${parseInt(core.color.substr(3, 2), 16)}, ${parseInt(core.color.substr(5, 2), 16)}, 0.3)`;
+        context.setLineDash([2, 2]);
+        context.beginPath();
+        context.moveTo(position.x, position.y);
+        context.lineTo(core.homePosition.x, core.homePosition.y);
+        context.stroke();
+        context.setLineDash([]);
+        
+        // Draw a little house/home symbol
+        context.fillStyle = core.color;
+        context.beginPath();
+        context.arc(core.homePosition.x, core.homePosition.y, 3, 0, Math.PI * 2);
+        context.fill();
+      }
       
-      // Calculate particle opacity - particles fade as they move outward
-      const particleOpacity = opacity * 0.8 * (1 - (i % 3) / 3);
-      
-      // Draw particle with pulsing effect
-      const pulseIntensity = 0.5 + 0.5 * Math.sin(totalTime * 8 + i);
-      context.fillStyle = `rgba(${parsedColor.r}, ${parsedColor.g}, ${parsedColor.b}, ${particleOpacity * pulseIntensity})`;
-      context.beginPath();
-      context.arc(particleX, particleY, particleSize, 0, Math.PI * 2);
-      context.fill();
+      // If there's a target position, draw a line to it
+      if (core.targetPosition) {
+        context.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+        context.setLineDash([2, 2]);
+        context.beginPath();
+        context.moveTo(position.x, position.y);
+        context.lineTo(core.targetPosition.x, core.targetPosition.y);
+        context.stroke();
+        context.setLineDash([]);
+        
+        // Draw a target marker
+        context.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+        context.beginPath();
+        context.arc(core.targetPosition.x, core.targetPosition.y, 3, 0, Math.PI * 2);
+        context.stroke();
+      }
     }
     
-    // Draw fading label
-    context.fillStyle = `rgba(255, 255, 255, ${opacity})`;
-    context.font = '8px Arial';
-    context.textAlign = 'center';
-    context.fillText('fading away', position.x, position.y - bodySize - 10);
-    
-    // Draw a subtle glow effect
-    const glowSize = bodySize * (1 + fadeoutProgress * 0.8);
-    const glowOpacity = 0.2 * (1 - fadeoutProgress);
-    
-    context.fillStyle = `rgba(${parsedColor.r}, ${parsedColor.g}, ${parsedColor.b}, ${glowOpacity})`;
-    context.beginPath();
-    context.arc(position.x, position.y, glowSize, 0, Math.PI * 2);
-    context.fill();
-    
-    // Draw animated rings that expand outward as the fadeout progresses
-    const ringCount = Math.min(3, Math.floor(fadeoutProgress * 5));
-    
-    for (let i = 0; i < ringCount; i++) {
-      const ringProgress = (fadeoutProgress * 0.8) + (i * 0.1);
-      const ringSize = bodySize * (1 + ringProgress * 5);
-      const ringOpacity = 0.4 * (1 - ringProgress) * opacity;
-      
-      context.strokeStyle = `rgba(${parsedColor.r}, ${parsedColor.g}, ${parsedColor.b}, ${ringOpacity})`;
-      context.lineWidth = 1.5 * (1 - fadeoutProgress * 0.5);
-      context.beginPath();
-      context.arc(position.x, position.y, ringSize, 0, Math.PI * 2);
-      context.stroke();
+    // If in debug mode, draw additional debug information
+    if (debug) {
+      this.renderDebugInfo(context);
     }
   }
   
@@ -714,5 +721,49 @@ export class SparklingRenderer {
         }
       }
     }
+  }
+  
+  /**
+   * Render debug information for the Sparkling
+   */
+  private renderDebugInfo(context: CanvasRenderingContext2D): void {
+    const core = this.sparklingCore as any;
+    const position = core.position;
+    
+    // Draw ID
+    context.fillStyle = 'white';
+    context.font = '10px Arial';
+    context.textAlign = 'center';
+    context.fillText(
+      `#${core.id}`, 
+      position.x, 
+      position.y - 25
+    );
+    
+    // Draw memory connections
+    this.renderMemory(
+      context,
+      position,
+      core.memory,
+      core.color,
+      core.totalTime
+    );
+    
+    // Draw parameter indicators
+    this.renderParameterIndicators(
+      context,
+      position,
+      core.parameters
+    );
+    
+    // Draw profile type
+    context.fillStyle = 'rgba(255, 255, 255, 0.7)';
+    context.font = '7px Arial';
+    context.textAlign = 'center';
+    context.fillText(
+      core.profile,
+      position.x,
+      position.y - 35
+    );
   }
 }
