@@ -88,6 +88,14 @@ This document tracks the implementation progress of Version 2 features for the S
 
 ## Latest Updates
 
+### April 20, 2025
+- Improved Milestone 2.1: Food Monitoring & Visualization based on feedback
+- Enhanced critical hunger visualization with pulsing food bar outlines instead of separate icon
+- Improved memory visualization by showing only the most important food and energy memories
+- Used color-coded connections to distinguish between food (orange) and energy (purple) memories
+- Increased memory importance for food and energy resources to make them persist longer
+- Fixed issue with memory connections disappearing too quickly
+
 ### April 19, 2025
 - Completed Milestone 2.1: Food Monitoring & Visualization
 - Enhanced Sparkling tooltips with detailed food level visualization

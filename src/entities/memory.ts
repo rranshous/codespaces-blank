@@ -322,7 +322,8 @@ export class Memory {
    */
   private calculateResourceImportance(amount: number): number {
     // Scale the base importance by the Sparkling's food memory importance parameter
-    const baseImportance = 0.3 + (amount / 50) * 0.4;
+    // Increased base importance from 0.5 to 0.5 to make food memories persist longer
+    const baseImportance = 0.5 + (amount / 50) * 0.4;
     // Apply the individual importance multiplier (allowing up to 95% maximum importance)
     return Math.min(baseImportance * (1 + this.foodMemoryImportance), 0.95);
   }
@@ -332,7 +333,8 @@ export class Memory {
    */
   private calculateEnergyImportance(amount: number): number {
     // Scale the base importance by the Sparkling's energy memory importance parameter
-    const baseImportance = 0.3 + (amount / 20) * 0.4;
+    // Increased base importance from 0.5 to 0.5 to make energy memories persist longer
+    const baseImportance = 0.5 + (amount / 20) * 0.4;
     // Apply the individual importance multiplier (allowing up to 95% maximum importance)
     return Math.min(baseImportance * (1 + this.energyMemoryImportance), 0.95);
   }

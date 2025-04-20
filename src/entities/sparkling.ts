@@ -1112,9 +1112,16 @@ export class Sparkling {
     // Food level with color based on level
     let foodBarColor;
     if (foodRatio < this.parameters.criticalHungerThreshold) {
-      // Critical - red with pulsing effect
+      // Critical - red with enhanced pulsing effect for the entire bar
       const pulseIntensity = 0.7 + 0.3 * Math.sin(this.totalTime * 4);
       foodBarColor = `rgba(255, 50, 0, ${pulseIntensity})`;
+      
+      // Add a pulsing outline around the entire food bar for critical state
+      const outlinePulse = 0.5 + 0.5 * Math.sin(this.totalTime * 5);
+      context.strokeStyle = `rgba(255, 0, 0, ${outlinePulse})`;
+      context.lineWidth = 1.5;
+      context.strokeRect(foodBarX - 1, foodBarY - 1, foodBarWidth + 2, foodBarHeight + 2);
+      context.lineWidth = 1;
     } else if (foodRatio < this.parameters.hungerThreshold) {
       // Low - yellow/orange
       foodBarColor = 'rgba(255, 150, 0, 0.8)';
@@ -1157,13 +1164,6 @@ export class Sparkling {
         foodBarX + foodBarWidth / 2,
         foodBarY + foodBarHeight + 7
       );
-    }
-    
-    // Draw food icon when at critical levels
-    if (foodRatio < this.parameters.criticalHungerThreshold) {
-      context.font = '10px Arial';
-      context.fillStyle = 'rgba(255, 100, 100, 0.9)';
-      context.fillText('🍽️', foodBarX - 12, foodBarY + foodBarHeight);
     }
     
     // Draw inference status indicator if actively inferring
@@ -1364,25 +1364,68 @@ export class Sparkling {
   private renderMemory(context: CanvasRenderingContext2D): void {
     const memories = this.memory.getAllMemories();
     
-    // Draw a line to connect recent memories
+    // Only draw connections to the most important memories
     if (memories.length > 0) {
-      context.strokeStyle = `rgba(${parseInt(this.color.substr(1, 2), 16)}, ${parseInt(this.color.substr(3, 2), 16)}, ${parseInt(this.color.substr(5, 2), 16)}, 0.3)`;
-      context.beginPath();
+      // Sort memories by importance (high to low)
+      const sortedMemories = [...memories].sort((a, b) => b.importance - a.importance);
       
-      // Start from the Sparkling's current position
-      context.moveTo(this.position.x, this.position.y);
-      
-      // Connect to each memory point
-      const recentMemories = this.memory.getRecentMemories(30); // Last 30 seconds
-      for (const memory of recentMemories) {
-        context.lineTo(memory.position.x, memory.position.y);
+      // Get important food and energy memories (only the top ones)
+      const importantFoodMemories = sortedMemories
+        .filter(m => m.type === MemoryEventType.RESOURCE_FOUND)
+        .slice(0, 3); // Show only top 3 food memories
+        
+      const importantEnergyMemories = sortedMemories
+        .filter(m => m.type === MemoryEventType.ENERGY_FOUND)
+        .slice(0, 2); // Show only top 2 energy memories
+        
+      // Draw connections to important food memories
+      if (importantFoodMemories.length > 0) {
+        context.strokeStyle = 'rgba(255, 150, 0, 0.4)'; // Orange for food
+        context.beginPath();
+        context.moveTo(this.position.x, this.position.y);
+        
+        importantFoodMemories.forEach(memory => {
+          context.lineTo(memory.position.x, memory.position.y);
+          context.moveTo(this.position.x, this.position.y); // Move back to start for next line
+        });
+        
+        context.stroke();
       }
       
-      context.stroke();
+      // Draw connections to important energy memories
+      if (importantEnergyMemories.length > 0) {
+        context.strokeStyle = 'rgba(156, 39, 176, 0.4)'; // Purple for energy
+        context.beginPath();
+        context.moveTo(this.position.x, this.position.y);
+        
+        importantEnergyMemories.forEach(memory => {
+          context.lineTo(memory.position.x, memory.position.y);
+          context.moveTo(this.position.x, this.position.y); // Move back to start for next line
+        });
+        
+        context.stroke();
+      }
+      
+      // Draw a line to the home position if it exists
+      if (this.homePosition) {
+        context.strokeStyle = `rgba(${parseInt(this.color.substr(1, 2), 16)}, ${parseInt(this.color.substr(3, 2), 16)}, ${parseInt(this.color.substr(5, 2), 16)}, 0.4)`;
+        context.setLineDash([2, 2]);
+        context.beginPath();
+        context.moveTo(this.position.x, this.position.y);
+        context.lineTo(this.homePosition.x, this.homePosition.y);
+        context.stroke();
+        context.setLineDash([]);
+      }
     }
     
-    // Draw symbols for each type of memory
-    for (const memory of memories) {
+    // Draw symbols for each type of memory - only show the important ones
+    const importantMemories = memories.filter(m => 
+      (m.type === MemoryEventType.RESOURCE_FOUND && m.importance > 0.6) || 
+      (m.type === MemoryEventType.ENERGY_FOUND && m.importance > 0.6) ||
+      m.type === MemoryEventType.INFERENCE_PERFORMED
+    );
+    
+    for (const memory of importantMemories) {
       let symbol = '';
       let color = 'white';
       
