@@ -932,24 +932,226 @@ export class Simulation {
     const controlsDiv = document.getElementById('controls');
     if (!controlsDiv) return;
     
-    // Create a container for the population controls
-    const populationContainer = document.createElement('div');
-    populationContainer.id = 'population-controls';
-    populationContainer.style.marginTop = '15px';
-    populationContainer.style.padding = '10px';
-    populationContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.3)';
-    populationContainer.style.borderRadius = '5px';
+    // Create a container for the unified control panel
+    const controlPanel = document.createElement('div');
+    controlPanel.id = 'unified-control-panel';
+    controlPanel.style.position = 'absolute';
+    controlPanel.style.top = '10px';
+    controlPanel.style.left = '10px';
+    controlPanel.style.maxWidth = '300px';
+    controlPanel.style.padding = '10px';
+    controlPanel.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+    controlPanel.style.color = 'white';
+    controlPanel.style.borderRadius = '5px';
+    controlPanel.style.zIndex = '100';
+    controlPanel.style.maxHeight = '80vh';
+    controlPanel.style.overflowY = 'auto';
+    controlPanel.style.fontFamily = 'Arial, sans-serif';
+    controlPanel.style.fontSize = '14px';
     
-    // Create a heading for the population section
-    const heading = document.createElement('h3');
-    heading.textContent = 'Population Control';
-    heading.style.margin = '0 0 10px 0';
-    heading.style.fontSize = '16px';
-    populationContainer.appendChild(heading);
+    // Create tabs for different control sections
+    const tabContainer = document.createElement('div');
+    tabContainer.style.display = 'flex';
+    tabContainer.style.marginBottom = '10px';
+    tabContainer.style.borderBottom = '1px solid #555';
+    
+    const tabs = [
+      { id: 'tab-basic', label: 'Basic Controls' },
+      { id: 'tab-population', label: 'Population' }
+    ];
+    
+    // Type definition for tab contents map
+    interface TabContentsMap {
+      [key: string]: HTMLElement;
+    }
+    
+    const tabContents: TabContentsMap = {};
+    
+    tabs.forEach(tab => {
+      // Create tab button
+      const tabButton = document.createElement('button');
+      tabButton.id = tab.id;
+      tabButton.textContent = tab.label;
+      tabButton.style.padding = '5px 10px';
+      tabButton.style.marginRight = '5px';
+      tabButton.style.backgroundColor = 'transparent';
+      tabButton.style.color = 'white';
+      tabButton.style.border = 'none';
+      tabButton.style.borderBottom = '2px solid transparent';
+      tabButton.style.cursor = 'pointer';
+      tabButton.style.outline = 'none';
+      
+      // Create tab content area
+      const tabContent = document.createElement('div');
+      tabContent.id = `${tab.id}-content`;
+      tabContent.style.display = tab.id === 'tab-basic' ? 'block' : 'none';
+      
+      // Store content element for later access
+      tabContents[tab.id] = tabContent;
+      
+      // Tab button click handler
+      tabButton.addEventListener('click', () => {
+        // Update active tab styling
+        document.querySelectorAll('[id^="tab-"]').forEach(el => {
+          (el as HTMLElement).style.borderBottom = '2px solid transparent';
+          (el as HTMLElement).style.fontWeight = 'normal';
+        });
+        tabButton.style.borderBottom = '2px solid #4CAF50';
+        tabButton.style.fontWeight = 'bold';
+        
+        // Show selected content, hide others
+        Object.values(tabContents).forEach(content => {
+          (content as HTMLElement).style.display = 'none';
+        });
+        tabContent.style.display = 'block';
+      });
+      
+      // Add to container
+      tabContainer.appendChild(tabButton);
+      controlPanel.appendChild(tabContent);
+    });
+    
+    // Set first tab as active
+    const firstTab = document.getElementById(tabs[0].id);
+    if (firstTab) {
+      firstTab.style.borderBottom = '2px solid #4CAF50';
+      firstTab.style.fontWeight = 'bold';
+    }
+    
+    controlPanel.insertBefore(tabContainer, controlPanel.firstChild);
+    
+    // Basic controls section - Move existing controls here
+    const basicContent = tabContents['tab-basic'];
+    
+    // Create basic control buttons
+    const startPauseButton = document.createElement('button');
+    startPauseButton.id = 'start-pause';
+    startPauseButton.textContent = 'Start/Pause';
+    startPauseButton.style.margin = '5px';
+    startPauseButton.style.padding = '5px 10px';
+    startPauseButton.addEventListener('click', () => this.toggleRunning());
+    
+    const resetButton = document.createElement('button');
+    resetButton.id = 'reset';
+    resetButton.textContent = 'Reset';
+    resetButton.style.margin = '5px';
+    resetButton.style.padding = '5px 10px';
+    resetButton.addEventListener('click', () => this.reset());
+    
+    const debugButton = document.createElement('button');
+    debugButton.id = 'toggle-debug';
+    debugButton.textContent = 'Toggle Details';
+    debugButton.style.margin = '5px';
+    debugButton.style.padding = '5px 10px';
+    debugButton.addEventListener('click', () => this.toggleDebug());
+    
+    // Create speed control container
+    const speedControlContainer = document.createElement('div');
+    speedControlContainer.style.margin = '10px 5px';
+    
+    const speedLabel = document.createElement('div');
+    speedLabel.textContent = 'Simulation Speed:';
+    speedLabel.style.marginBottom = '5px';
+    speedControlContainer.appendChild(speedLabel);
+    
+    const speedButtonsContainer = document.createElement('div');
+    speedButtonsContainer.style.display = 'flex';
+    speedButtonsContainer.style.justifyContent = 'space-between';
+    
+    // Create speed buttons
+    const speeds = [
+      { id: 'speed-1x', value: SimulationSpeed.NORMAL, label: '1x' },
+      { id: 'speed-2x', value: SimulationSpeed.DOUBLE, label: '2x' },
+      { id: 'speed-5x', value: SimulationSpeed.FAST, label: '5x' },
+      { id: 'speed-10x', value: SimulationSpeed.ULTRA, label: '10x' }
+    ];
+    
+    speeds.forEach(speed => {
+      const speedButton = document.createElement('button');
+      speedButton.id = speed.id;
+      speedButton.textContent = speed.label;
+      speedButton.className = 'speed-button';
+      speedButton.style.flex = '1';
+      speedButton.style.margin = '0 2px';
+      speedButton.style.padding = '3px 0';
+      speedButton.style.cursor = 'pointer';
+      speedButton.addEventListener('click', () => this.setSimulationSpeed(speed.value));
+      
+      // Set the initial active state
+      if (speed.value === SimulationSpeed.NORMAL) {
+        speedButton.classList.add('active');
+      }
+      
+      speedButtonsContainer.appendChild(speedButton);
+    });
+    
+    speedControlContainer.appendChild(speedButtonsContainer);
+    
+    // Add CSS for speed buttons
+    const style = document.createElement('style');
+    style.textContent = `
+      .speed-button.active {
+        background-color: #4CAF50;
+        color: white;
+      }
+    `;
+    document.head.appendChild(style);
+    
+    // Add inference controls
+    const inferenceControlsContainer = document.createElement('div');
+    inferenceControlsContainer.style.margin = '10px 5px';
+    
+    const inferenceLabel = document.createElement('div');
+    inferenceLabel.textContent = 'Inference Settings:';
+    inferenceLabel.style.marginBottom = '5px';
+    inferenceControlsContainer.appendChild(inferenceLabel);
+    
+    const inferenceToggleButton = document.createElement('button');
+    inferenceToggleButton.id = 'toggle-inference';
+    inferenceToggleButton.textContent = this.useMockInference ? 'Using Mock Inference' : 'Using API Inference';
+    inferenceToggleButton.style.margin = '5px 0';
+    inferenceToggleButton.style.padding = '5px 10px';
+    inferenceToggleButton.style.width = '100%';
+    inferenceToggleButton.addEventListener('click', () => this.toggleInferenceMode());
+    
+    const proxyToggleButton = document.createElement('button');
+    proxyToggleButton.id = 'toggle-proxy';
+    proxyToggleButton.textContent = this.apiConfig.useProxy ? 'Using Proxy Server' : 'Using Direct API Calls';
+    proxyToggleButton.style.margin = '5px 0';
+    proxyToggleButton.style.padding = '5px 10px';
+    proxyToggleButton.style.width = '100%';
+    proxyToggleButton.addEventListener('click', () => this.toggleProxyMode());
+    
+    const runTestsButton = document.createElement('button');
+    runTestsButton.id = 'run-inference-tests';
+    runTestsButton.textContent = 'Run Inference Tests';
+    runTestsButton.style.margin = '5px 0';
+    runTestsButton.style.padding = '5px 10px';
+    runTestsButton.style.width = '100%';
+    runTestsButton.addEventListener('click', () => this.runInferenceTests());
+    
+    inferenceControlsContainer.appendChild(inferenceToggleButton);
+    inferenceControlsContainer.appendChild(proxyToggleButton);
+    inferenceControlsContainer.appendChild(runTestsButton);
+    
+    // Add all elements to the basic controls section
+    const buttonContainer = document.createElement('div');
+    buttonContainer.style.display = 'flex';
+    buttonContainer.style.justifyContent = 'space-between';
+    buttonContainer.appendChild(startPauseButton);
+    buttonContainer.appendChild(resetButton);
+    buttonContainer.appendChild(debugButton);
+    
+    basicContent.appendChild(buttonContainer);
+    basicContent.appendChild(speedControlContainer);
+    basicContent.appendChild(inferenceControlsContainer);
+    
+    // Population controls section
+    const populationContent = tabContents['tab-population'];
     
     // Add auto population control toggle
     const autoPopControlDiv = document.createElement('div');
-    autoPopControlDiv.style.marginBottom = '10px';
+    autoPopControlDiv.style.marginBottom = '15px';
     autoPopControlDiv.style.display = 'flex';
     autoPopControlDiv.style.alignItems = 'center';
     
@@ -966,34 +1168,22 @@ export class Simulation {
     autoPopControlDiv.appendChild(autoPopControlCheckbox);
     autoPopControlDiv.appendChild(autoPopControlLabel);
     
-    // Add event listener for the checkbox
-    autoPopControlCheckbox.addEventListener('change', () => {
-      this.config.autoPopulationControl = autoPopControlCheckbox.checked;
-      
-      // Update the UI elements based on checkbox state
-      populationControls.forEach(control => {
-        if (control.id !== 'auto-population-control') {
-          control.disabled = !autoPopControlCheckbox.checked;
-          control.style.opacity = autoPopControlCheckbox.checked ? '1' : '0.5';
-        }
-      });
-      
-      console.log(`Auto population control: ${this.config.autoPopulationControl ? 'enabled' : 'disabled'}`);
-    });
-    
-    populationContainer.appendChild(autoPopControlDiv);
+    populationContent.appendChild(autoPopControlDiv);
     
     // Create population metrics display
     this.populationMetricsDiv = document.createElement('div');
     this.populationMetricsDiv.id = 'population-metrics';
-    this.populationMetricsDiv.style.marginBottom = '10px';
+    this.populationMetricsDiv.style.marginBottom = '15px';
+    this.populationMetricsDiv.style.padding = '8px';
+    this.populationMetricsDiv.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+    this.populationMetricsDiv.style.borderRadius = '4px';
     this.populationMetricsDiv.style.fontSize = '12px';
     this.populationMetricsDiv.style.lineHeight = '1.5';
     
     // Initialize metrics display
     this.updatePopulationMetrics();
     
-    populationContainer.appendChild(this.populationMetricsDiv);
+    populationContent.appendChild(this.populationMetricsDiv);
     
     // Create slider controls with labels for population parameters
     const createSliderControl = (
@@ -1006,14 +1196,18 @@ export class Simulation {
       onChange: (value: number) => void
     ) => {
       const controlDiv = document.createElement('div');
-      controlDiv.style.marginBottom = '10px';
+      controlDiv.style.marginBottom = '15px';
       
       const controlLabel = document.createElement('label');
-      controlLabel.htmlFor = id;
-      controlLabel.textContent = `${label}: `;
-      controlLabel.style.marginRight = '10px';
-      controlLabel.style.display = 'inline-block';
-      controlLabel.style.width = '180px';
+      controlLabel.setAttribute('for', id);
+      controlLabel.textContent = label;
+      controlLabel.style.marginBottom = '5px';
+      controlLabel.style.fontSize = '12px';
+      controlLabel.style.display = 'block';
+      
+      const sliderContainer = document.createElement('div');
+      sliderContainer.style.display = 'flex';
+      sliderContainer.style.alignItems = 'center';
       
       const slider = document.createElement('input');
       slider.type = 'range';
@@ -1022,25 +1216,34 @@ export class Simulation {
       slider.max = max.toString();
       slider.value = value.toString();
       slider.step = step.toString();
-      slider.style.width = '150px';
+      slider.style.flex = '1';
       slider.style.marginRight = '10px';
       
       const valueDisplay = document.createElement('span');
       valueDisplay.textContent = value.toString();
       valueDisplay.style.minWidth = '40px';
-      valueDisplay.style.display = 'inline-block';
+      valueDisplay.style.fontFamily = 'monospace';
+      valueDisplay.style.fontSize = '12px';
       
-      // Add event listener
+      // Add input event listener for continuous updating
       slider.addEventListener('input', () => {
         const newValue = parseFloat(slider.value);
         valueDisplay.textContent = newValue.toString();
         onChange(newValue);
       });
       
-      // Add to control div
+      // Add change event listener for final value
+      slider.addEventListener('change', () => {
+        const finalValue = parseFloat(slider.value);
+        // Call onChange again to ensure final value is applied
+        onChange(finalValue);
+      });
+      
+      // Add to containers
+      sliderContainer.appendChild(slider);
+      sliderContainer.appendChild(valueDisplay);
       controlDiv.appendChild(controlLabel);
-      controlDiv.appendChild(slider);
-      controlDiv.appendChild(valueDisplay);
+      controlDiv.appendChild(sliderContainer);
       
       return { div: controlDiv, input: slider };
     };
@@ -1055,14 +1258,11 @@ export class Simulation {
           this.config.minSparklingCount = value;
           if (this.config.initialSparklingCount < value) {
             this.config.initialSparklingCount = value;
-            const minSlider = document.getElementById('initial-sparkling-count') as HTMLInputElement;
-            if (minSlider) {
-              minSlider.value = value.toString();
-            }
-            
-            const valueSpan = document.querySelector('label[for="initial-sparkling-count"] + input + span');
-            if (valueSpan) {
-              valueSpan.textContent = value.toString();
+            const targetSlider = document.getElementById('initial-sparkling-count') as HTMLInputElement;
+            if (targetSlider) {
+              targetSlider.value = value.toString();
+              const valueSpan = targetSlider.nextElementSibling;
+              if (valueSpan) valueSpan.textContent = value.toString();
             }
           }
         }
@@ -1080,11 +1280,8 @@ export class Simulation {
             const minSlider = document.getElementById('min-sparkling-count') as HTMLInputElement;
             if (minSlider) {
               minSlider.value = value.toString();
-            }
-            
-            const valueSpan = document.querySelector('label[for="min-sparkling-count"] + input + span');
-            if (valueSpan) {
-              valueSpan.textContent = value.toString();
+              const valueSpan = minSlider.nextElementSibling;
+              if (valueSpan) valueSpan.textContent = value.toString();
             }
           }
           if (value > this.config.maxSparklingCount) {
@@ -1092,11 +1289,8 @@ export class Simulation {
             const maxSlider = document.getElementById('max-sparkling-count') as HTMLInputElement;
             if (maxSlider) {
               maxSlider.value = value.toString();
-            }
-            
-            const valueSpan = document.querySelector('label[for="max-sparkling-count"] + input + span');
-            if (valueSpan) {
-              valueSpan.textContent = value.toString();
+              const valueSpan = maxSlider.nextElementSibling;
+              if (valueSpan) valueSpan.textContent = value.toString();
             }
           }
         }
@@ -1110,14 +1304,11 @@ export class Simulation {
           this.config.maxSparklingCount = value;
           if (this.config.initialSparklingCount > value) {
             this.config.initialSparklingCount = value;
-            const maxSlider = document.getElementById('initial-sparkling-count') as HTMLInputElement;
-            if (maxSlider) {
-              maxSlider.value = value.toString();
-            }
-            
-            const valueSpan = document.querySelector('label[for="initial-sparkling-count"] + input + span');
-            if (valueSpan) {
-              valueSpan.textContent = value.toString();
+            const targetSlider = document.getElementById('initial-sparkling-count') as HTMLInputElement;
+            if (targetSlider) {
+              targetSlider.value = value.toString();
+              const valueSpan = targetSlider.nextElementSibling;
+              if (valueSpan) valueSpan.textContent = value.toString();
             }
           }
         }
@@ -1147,14 +1338,35 @@ export class Simulation {
       createSliderControl(
         'resource-spawn-rate-per-sparkling',
         'Resource Rate Per Sparkling',
-        0.0001, 0.001, this.config.resourceSpawnRatePerSparkling, 0.0001,
-        (value) => this.config.resourceSpawnRatePerSparkling = value
+        -0.0000050, 0.0000050, this.config.resourceSpawnRatePerSparkling, 0.0000005,
+        (value) => {
+          // Store the new value in the config
+          this.config.resourceSpawnRatePerSparkling = value;
+          
+          // Immediately apply the change to resource spawning
+          this.adjustResourceSpawnRate();
+          
+          // Format the display value with scientific notation for clarity
+          const valueSpan = document.querySelector(`#resource-spawn-rate-per-sparkling + span`) as HTMLElement;
+          if (valueSpan) {
+            valueSpan.textContent = value.toExponential(7);
+          }
+          
+          console.log(`Resource spawn rate per Sparkling set to: ${value.toExponential(7)}`);
+        }
       )
     ];
     
+    // Format the resource spawn rate display with scientific notation initially
+    const resourceRateSlider = populationSliders[populationSliders.length - 1];
+    const resourceRateValueSpan = resourceRateSlider.input.nextElementSibling as HTMLElement;
+    if (resourceRateValueSpan) {
+      resourceRateValueSpan.textContent = this.config.resourceSpawnRatePerSparkling.toExponential(7);
+    }
+    
     // Add sliders to container
     populationSliders.forEach(slider => {
-      populationContainer.appendChild(slider.div);
+      populationContent.appendChild(slider.div);
     });
     
     // Create a list of all control elements for enabling/disabling
@@ -1163,27 +1375,46 @@ export class Simulation {
       ...populationSliders.map(s => s.input)
     ];
     
+    // Add event listener for the auto population control checkbox
+    autoPopControlCheckbox.addEventListener('change', () => {
+      this.config.autoPopulationControl = autoPopControlCheckbox.checked;
+      
+      // Update the UI elements based on checkbox state
+      populationSliders.forEach(slider => {
+        slider.input.disabled = !autoPopControlCheckbox.checked;
+        slider.div.style.opacity = autoPopControlCheckbox.checked ? '1' : '0.5';
+      });
+      
+      console.log(`Auto population control: ${this.config.autoPopulationControl ? 'enabled' : 'disabled'}`);
+    });
+    
     // Set initial state of controls based on auto population control setting
     populationSliders.forEach(slider => {
       if (!this.config.autoPopulationControl) {
         slider.input.disabled = true;
-        slider.input.style.opacity = '0.5';
+        slider.div.style.opacity = '0.5';
       }
     });
     
     // Add Reset Population button
     const resetPopulationButton = document.createElement('button');
     resetPopulationButton.textContent = 'Reset Population';
+    resetPopulationButton.style.width = '100%';
+    resetPopulationButton.style.padding = '8px 10px';
     resetPopulationButton.style.marginTop = '10px';
-    resetPopulationButton.style.padding = '5px 10px';
     resetPopulationButton.addEventListener('click', () => this.resetPopulation());
     
-    populationContainer.appendChild(resetPopulationButton);
+    populationContent.appendChild(resetPopulationButton);
     
-    // Add the population controls to the main controls div
-    controlsDiv.appendChild(populationContainer);
+    // Add the control panel to the body instead of the controls div
+    document.body.appendChild(controlPanel);
+    
+    // Hide the original controls div since we've moved everything to our new panel
+    if (controlsDiv) {
+      controlsDiv.style.display = 'none';
+    }
   }
-  
+
   /**
    * Reset the population to initial settings
    */

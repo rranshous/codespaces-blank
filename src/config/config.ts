@@ -47,21 +47,21 @@ export const DEFAULT_CONFIG: SimulationConfig = {
   renderScale: 1,
   
   // Sparkling parameters
-  initialSparklingCount: 12,  // Increased from 5 to 12
-  minSparklingCount: 5,       // Minimum allowed population
-  maxSparklingCount: 30,      // Maximum allowed population
-  populationBalanceRange: 2,  // Allow variation of ±2 from target population
-  autoPopulationControl: true, // Enable automatic population control
-  populationGrowthRate: 0.2,   // Can grow by up to 20% at once
-  populationDeclineRate: 0.1,  // Can decline by up to 10% at once
+  initialSparklingCount: 12,
+  minSparklingCount: 5,
+  maxSparklingCount: 30,
+  populationBalanceRange: 2,
+  autoPopulationControl: true,
+  populationGrowthRate: 0.2,
+  populationDeclineRate: 0.1,
   sparklingSize: 10,
-  sparklingSpeed: 2,
+  sparklingSpeed: 3.5,             // Increased from 2 to 3.5 for faster movement
   sparklingMaxFood: 100,
   sparklingMaxNeuralEnergy: 100,
   
   // Resource parameters
-  resourceSpawnRate: 0.0003,  // Base resource spawn rate
-  resourceSpawnRatePerSparkling: -0.00001, // Decrease in spawn rate per Sparkling (creates limiting factor)
+  resourceSpawnRate: 0.0003,
+  resourceSpawnRatePerSparkling: -0.0000025,  // Reduced sensitivity by 4x (from -0.00001)
   resourceValue: 10,
   
   // Memory parameters

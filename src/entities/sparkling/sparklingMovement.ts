@@ -62,7 +62,7 @@ export class SparklingMovement {
       } else {
         // Move toward target
         // Adjust the speed based on state - more urgent states move faster
-        let speedModifier = 1.0;
+        let speedModifier = 2.5; // Significantly increased base speed modifier from 1.5 to 2.5
         
         // Access resources to calculate ratios
         const resources = this.sparklingCore.getResourceLevels();
@@ -70,9 +70,9 @@ export class SparklingMovement {
         const energyRatio = resources.neuralEnergy / this.sparklingCore.getMaxNeuralEnergy();
         
         if (state === SparklingState.SEEKING_FOOD && foodRatio < parameters.criticalHungerThreshold) {
-          speedModifier = 1.3; // Move faster when critically hungry
+          speedModifier = 3.0; // Increased from 2.0 to 3.0 for critically hungry
         } else if (state === SparklingState.SEEKING_ENERGY && energyRatio < parameters.criticalEnergyThreshold) {
-          speedModifier = 1.3; // Move faster when critically low on energy
+          speedModifier = 3.0; // Increased from 2.0 to 3.0 for critically low energy
         }
         
         core.velocity = {
@@ -86,9 +86,9 @@ export class SparklingMovement {
     const terrainProps = world.getTerrainPropertiesAt(position.x, position.y);
     const movementFactor = terrainProps ? 1 / terrainProps.movementCost : 1;
     
-    // Apply velocity to position
-    position.x += velocity.vx * deltaTime * stats.speed * movementFactor;
-    position.y += velocity.vy * deltaTime * stats.speed * movementFactor;
+    // Apply velocity to position - significantly increased movement speed by 2.5x
+    position.x += velocity.vx * deltaTime * stats.speed * movementFactor * 2.5;
+    position.y += velocity.vy * deltaTime * stats.speed * movementFactor * 2.5;
     
     // Keep within world bounds
     position.x = Math.max(0, Math.min(world.getDimensions().width * 20 - 1, position.x));

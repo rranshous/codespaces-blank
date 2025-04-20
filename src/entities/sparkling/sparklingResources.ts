@@ -26,8 +26,8 @@ export class SparklingResources {
     // Don't consume resources if already fading out
     if (core.isFadingOut) return;
     
-    // Consume food at base rate
-    core.food = Math.max(0, core.food - stats.foodConsumptionRate * deltaTime);
+    // Significantly reduce food consumption rate by 80% to slow down hunger
+    core.food = Math.max(0, core.food - stats.foodConsumptionRate * 0.2 * deltaTime);
     
     // Only consume neural energy during inference (thinking)
     if (core.inferenceStatus === "THINKING") {
@@ -36,10 +36,10 @@ export class SparklingResources {
       core.neuralEnergy = Math.max(0, core.neuralEnergy - energyConsumptionRate * deltaTime);
     }
     
-    // Extra food consumption during movement
+    // Extra food consumption during movement (significantly reduced by 85%)
     if (state !== SparklingState.IDLE && state !== SparklingState.RESTING) {
-      // Movement costs extra food - reduced from 0.2 to 0.1
-      const movementCost = 0.1 * deltaTime;
+      // Movement costs extra food
+      const movementCost = 0.015 * deltaTime;
       core.food = Math.max(0, core.food - movementCost);
     }
     

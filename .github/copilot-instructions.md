@@ -18,6 +18,8 @@ keep lessons learned during implementation in `docs/LESSONS.md`.
 
 review the `docs/LESSONS.md` file before implementation cycles
 
+update the progress doc after each implementation change
+
 Keep files under 1000 lines. if a file is longer than 1000 lines break it's functions out in to other objects or modules.
 
 create all documents in markdown

@@ -66,6 +66,18 @@ This document tracks the implementation progress of Version 2 features for the S
 
 **Context**: This milestone completes the Sparkling lifecycle mechanics by creating a balanced ecosystem that maintains stability while still allowing for natural turnover. The population control system prevents both overpopulation (which would deplete resources too quickly) and underpopulation (which would limit interactions and learning), creating ideal conditions for observing emergent behaviors and adaptive strategies. The UI controls give researchers fine-grained control over population dynamics for various experimental scenarios.
 
+### Milestone 2.5: UI and Simulation Parameter Improvements
+- [x] Fix control panel blocking debug panel
+- [x] Improve resource spawn rate slider functionality
+- [x] Reduce Sparklings' food consumption rate
+- [x] Increase Sparklings' movement speed
+
+**Status**: Completed
+**Completion Date**: April 20, 2025
+**Notes**: Implemented several important improvements to the UI and simulation parameters. Redesigned the UI layout to merge the control panel and debug panel into a single tabbed interface for better use of screen space. Fixed the resource spawn rate slider that was getting "stuck" at high values by improving its sensitivity and display. Significantly reduced the food consumption rate for Sparklings by 80% to prevent them from consuming food too quickly. Increased Sparkling movement speed by 2.5x to improve the simulation flow and make their movements more visible and engaging.
+
+**Context**: These improvements address user feedback about the simulation interface and parameters. The UI redesign creates a more intuitive and space-efficient control system, while the parameter adjustments create a more balanced and engaging simulation experience. Reduced food consumption makes Sparklings more sustainable, and increased movement speed makes the simulation more dynamic and easier to observe. These changes significantly improve the user experience and the overall balance of the simulation ecosystem.
+
 ## Phase 3: Enhanced Visualization & Analytics
 
 ### Milestone 3.1: Advanced Visualization Controls
@@ -115,6 +127,21 @@ This document tracks the implementation progress of Version 2 features for the S
 ## Latest Updates
 
 ### April 20, 2025
+- Completed Milestone 2.5: UI and Simulation Parameter Improvements
+- Redesigned UI layout to merge control panel and debug panel into a tabbed interface
+- Fixed resource spawn rate slider functionality that was getting stuck at high values
+- Significantly reduced food consumption rate by 80% to prevent Sparklings from depleting food too quickly
+- Increased Sparkling movement speed by 2.5x to improve simulation flow and visibility
+- Optimized slider controls for better response and clearer visual feedback
+- Added scientific notation display for resource spawn rate values for better clarity
+- Validated all changes with successful build to ensure no TypeScript errors
+- Completed Milestone 2.4: Population Control
+- Successfully implemented population control mechanics to maintain ecosystem balance
+- Added configuration parameters for minimum, target, and maximum population sizes
+- Created resource balance calculation system to assess resource availability relative to population needs
+- Implemented controlled fadeout for Sparklings when population needs to be reduced
+- Added dynamic resource spawn rate adjustment based on population size
+- Created comprehensive UI panel for population control with statistics display and parameter sliders
 - Completed Milestone 2.3: Add new sparklings to replace those which fade out
 - Implemented mechanics to spawn new Sparklings when existing ones fade out
 - Added spawning logic that places new Sparklings in resource-rich areas of the world
@@ -136,13 +163,6 @@ This document tracks the implementation progress of Version 2 features for the S
 - Split Milestone 2.2 into three separate milestones for better tracking: Fadeout & New Sparkling Mechanics, Add new sparklings, and Population Control
 - Refined milestone descriptions and tasks to better align with implementation goals
 - Adjusted expected completion dates for upcoming milestones
-- Completed Milestone 2.4: Population Control
-- Successfully implemented population control mechanics to maintain ecosystem balance
-- Added configuration parameters for minimum, target, and maximum population sizes
-- Created resource balance calculation system to assess resource availability relative to population needs
-- Implemented controlled fadeout for Sparklings when population needs to be reduced
-- Added dynamic resource spawn rate adjustment based on population size
-- Created comprehensive UI panel for population control with statistics display and parameter sliders
 
 ### April 19, 2025
 - Completed Milestone 2.1: Food Monitoring & Visualization
