@@ -56,3 +56,15 @@ This document captures important lessons, insights, and best practices we've dis
 3. **Documentation Review**: Frequently review high-level documentation for correctness and completeness. This helps ensure that documents like SIMULATION_FEATURES.md remain accurate as features are added or modified, preventing discrepancies between documentation and implementation.
 
 4. **Feature Documentation**: Update feature documentation in real-time as implementations are completed, rather than waiting until the end of a development cycle. This ensures that documentation always reflects the current state of the application.
+
+## Code Organization
+
+1. **Component-Based Architecture**: For complex entities like Sparklings, using a component-based architecture with separate modules for different aspects of functionality (rendering, movement, resources, decisions, etc.) improves code organization and maintainability.
+
+2. **File Size Limits**: Keeping files under 1000 lines makes the codebase more maintainable. When a file grows too large, consider breaking it into smaller modules based on functional responsibilities.
+
+3. **Composition Over Deep Inheritance**: Using composition to combine specialized components is more flexible than relying on complex inheritance hierarchies, especially for entities with many different behaviors.
+
+4. **Protected vs Private**: Using protected access modifiers in base classes allows derived classes to access necessary properties, while still maintaining encapsulation from outside code.
+
+5. **Internal Access Patterns**: When refactoring existing code into a component-based architecture, careful consideration is needed for how components access shared state. Consider using a core component with protected members that can be safely accessed by specialized components.

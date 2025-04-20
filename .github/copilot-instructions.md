@@ -14,8 +14,13 @@ To understand the projects goals and the status of the work review the documents
 
 our development process will a big cycle (working on milestones) followed by small cycle (reviewing and refining the implementation)
 
+for each version keep a record of tradeoffs made.
+
+keep lessons learned during implementation in `docs/LESSONS.md`.
+
 review the `docs/LESSONS.md` file before implementation cycles
 
-do not remove features unless specificly instructed to
+Keep files under 1000 lines. if a file is longer than 1000 lines break it's functions out in to other objects or modules.
 
-Keep files under 1000 lines
+create all documents in markdown
+
