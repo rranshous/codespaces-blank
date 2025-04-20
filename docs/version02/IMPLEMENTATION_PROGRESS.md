@@ -33,15 +33,26 @@ This document tracks the implementation progress of Version 2 features for the S
 **Context**: This milestone improves user understanding of the food consumption system by providing clear visual indicators and detailed information. These enhancements enable users to better monitor the simulation health and understand Sparkling decision-making related to food resources, which is essential for observing and analyzing the ecosystem dynamics.
 
 ### Milestone 2.2: Fadeout & New Sparkling Mechanics
-- [ ] Enhancement of existing food and neural energy relationship
 - [ ] Gradual fadeout process when both food and neural energy are depleted
-- [ ] Fadeout visual effects
-- [ ] New Sparkling introduction mechanics
-- [ ] Population control balancing
+- [ ] Visual effects for Sparkling fadeout
 
 **Status**: Not started
 **Expected Completion**: April 27, 2025
-**Context**: This milestone will complete the Sparkling lifecycle by implementing fadeout mechanics for resource-depleted Sparklings and introducing new Sparklings to maintain population balance. This creates a truly dynamic ecosystem where adaptation and evolution can be observed over time, establishing the foundation for the inheritance and evolution mechanics in Phase 4.
+**Context**: This milestone will implement the fadeout mechanics for resource-depleted Sparklings, creating a more realistic lifecycle simulation. The visual effects will help users understand when Sparklings are disappearing from the simulation due to resource depletion.
+
+### Milestone 2.3: Add new sparklings to replaced those which fade out
+- [ ] Implement mechanics for new Sparklings to appear
+
+**Status**: Not started
+**Expected Completion**: May 1, 2025
+**Context**: This milestone introduces the ability for new Sparklings to appear in the simulation, replacing those that have faded out. This creates a dynamic ecosystem with continuous population turnover, setting the stage for later evolution mechanics.
+
+### Milestone 2.4: Population Control
+- [ ] Add population control to maintain ecosystem balance
+
+**Status**: Not started
+**Expected Completion**: May 3, 2025
+**Context**: This milestone completes the Sparkling lifecycle mechanics by implementing population control features that maintain the ecosystem's balance. This ensures the simulation remains stable over time while still allowing for natural turnover and evolution.
 
 ## Phase 3: Enhanced Visualization & Analytics
 
@@ -92,6 +103,10 @@ This document tracks the implementation progress of Version 2 features for the S
 ## Latest Updates
 
 ### April 20, 2025
+- Updated implementation plan and progress tracking for Phase 2 milestones
+- Split Milestone 2.2 into three separate milestones for better tracking: Fadeout & New Sparkling Mechanics, Add new sparklings, and Population Control
+- Refined milestone descriptions and tasks to better align with implementation goals
+- Adjusted expected completion dates for upcoming milestones
 - Improved Milestone 2.1: Food Monitoring & Visualization based on user feedback
 - Enhanced critical hunger visualization with pulsing food bar outlines instead of separate icon
 - Improved memory visualization by showing only the most important food and energy memories
