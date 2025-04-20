@@ -12,8 +12,6 @@ do not consider a milestone complete until it has built without errors
 
 To understand the projects goals and the status of the work review the documents in the `docs` folder
 
-our development process will a big cycle (working on milestones) followed by small cycle (reviewing and refining the implementation)
-
 for each version keep a record of tradeoffs made.
 
 keep lessons learned during implementation in `docs/LESSONS.md`.

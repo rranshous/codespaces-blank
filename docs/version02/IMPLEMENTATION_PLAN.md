@@ -30,17 +30,15 @@ This document outlines the implementation strategy for Version 2 of the Sparklin
 - Add improved UI elements for tracking food resources
 - Enhance visibility of food-related Sparkling behaviors
 
-**Goal**: Improve user understanding of the food consumption system by providing clear visual indicators and detailed information. This enables users to better monitor the simulation health and understand Sparkling decision-making related to food resources.
-
 #### Milestone 2.2: Fadeout & New Sparkling Mechanics (1 week)
-- Enhance existing food and neural energy consumption relationship
 - Implement gradual fadeout process when both food and neural energy are depleted
 - Create visual effects for Sparkling fadeout
-- Add fadeout memory for other Sparklings (remembering where a Sparkling faded)
-- Implement mechanics for new Sparklings to appear
-- Add population control to maintain ecosystem balance
 
-**Goal**: Complete the Sparkling lifecycle by implementing fadeout mechanics for resource-depleted Sparklings and introducing new Sparklings to maintain population balance. This creates a truly dynamic ecosystem where adaptation and evolution can be observed over time.
+#### Milestone 2.3: Add new sparklings to replaced those which fade out
+- Implement mechanics for new Sparklings to appear
+
+#### Milestone 2.4: 
+- Add population control to maintain ecosystem balance
 
 ### Phase 3: Enhanced Visualization & Analytics (2 weeks)
 
