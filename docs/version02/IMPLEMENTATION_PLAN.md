@@ -40,31 +40,11 @@ This document outlines the implementation strategy for Version 2 of the Sparklin
 #### Milestone 2.4: 
 - Add population control to maintain ecosystem balance
 
-### Phase 3: Enhanced Visualization & Analytics (2 weeks)
-
-**Purpose**: Provide users with advanced tools to observe, analyze, and understand simulation dynamics. This phase focuses on making the simulation more accessible for research and enhancing the ability to identify patterns and behaviors.
-
-#### Milestone 3.1: Advanced Visualization Controls (1 week)
-- Implement zoom and pan controls
-- Create path visualization for Sparkling movement
-- Develop memory visualization overlays
-- Add animation improvements for states and interactions
-- Implement selective visualization layers
-
-**Goal**: Enhance user ability to observe and analyze Sparkling behavior through advanced visualization controls. These tools will enable users to focus on specific aspects of the simulation and track movement and decision patterns more effectively.
-
-#### Milestone 3.2: Analytics Dashboard (1 week)
-- Create visual metrics for simulation-wide statistics
-- Implement Sparkling population charts
-- Develop resource distribution visualization
-
-**Goal**: Provide users with quantitative data and analytics about the simulation. This dashboard will enable the study of population dynamics, resource utilization patterns, and other emergent behaviors across the entire simulation.
-
-### Phase 4: Sparkling Inheritance & Evolution (2 weeks)
+### Phase 3: Sparkling Inheritance & Evolution (2 weeks)
 
 **Purpose**: Implement true evolutionary mechanics where successful Sparklings pass on their decision parameters to new generations with variations. This creates a system where adaptive traits are naturally selected over time based on environmental pressures.
 
-#### Milestone 4.1: Parameter Inheritance (1 week)
+#### Milestone 3.1: Parameter Inheritance (1 week)
 - Implement parameter inheritance from successful Sparklings
 - Create parameter variation algorithm for new Sparklings
 - Add visualization for parameter lineage
@@ -73,7 +53,7 @@ This document outlines the implementation strategy for Version 2 of the Sparklin
 
 **Goal**: Enable the transmission of successful decision parameters from existing Sparklings to new ones, with controlled variation. This creates a foundation for natural selection within the simulation where successful strategies are more likely to be passed on.
 
-#### Milestone 4.2: Evolution Mechanics (1 week)
+#### Milestone 3.2: Evolution Mechanics (1 week)
 - Implement selection pressures based on environment
 - Create success metrics for different strategies
 - Develop branching evolution visualization
@@ -81,6 +61,26 @@ This document outlines the implementation strategy for Version 2 of the Sparklin
 - Implement genetic diversity management
 
 **Goal**: Build a comprehensive evolution system where environmental factors create selection pressures for different parameters. This will allow the simulation to demonstrate how different strategies evolve in response to environmental conditions and resource availability.
+
+### Phase 4: Enhanced Visualization & Analytics (2 weeks)
+
+**Purpose**: Provide users with advanced tools to observe, analyze, and understand simulation dynamics. This phase focuses on making the simulation more accessible for research and enhancing the ability to identify patterns and behaviors.
+
+#### Milestone 4.1: Advanced Visualization Controls (1 week)
+- Implement zoom and pan controls
+- Create path visualization for Sparkling movement
+- Develop memory visualization overlays
+- Add animation improvements for states and interactions
+- Implement selective visualization layers
+
+**Goal**: Enhance user ability to observe and analyze Sparkling behavior through advanced visualization controls. These tools will enable users to focus on specific aspects of the simulation and track movement and decision patterns more effectively.
+
+#### Milestone 4.2: Analytics Dashboard (1 week)
+- Create visual metrics for simulation-wide statistics
+- Implement Sparkling population charts
+- Develop resource distribution visualization
+
+**Goal**: Provide users with quantitative data and analytics about the simulation. This dashboard will enable the study of population dynamics, resource utilization patterns, and other emergent behaviors across the entire simulation.
 
 ## Development Approach
 

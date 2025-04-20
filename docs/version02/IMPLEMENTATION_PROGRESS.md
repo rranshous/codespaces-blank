@@ -78,31 +78,9 @@ This document tracks the implementation progress of Version 2 features for the S
 
 **Context**: These improvements address user feedback about the simulation interface and parameters. The redesigned UI ensures that users can always see the entire world map while maintaining full access to controls. The draggable panel provides flexibility to position controls wherever they don't obstruct important simulation elements. Parameter adjustments create a more balanced and engaging simulation experience - reduced food consumption makes Sparklings more sustainable, and increased movement speed makes the simulation more dynamic and easier to observe. These changes significantly improve the user experience and the overall balance of the simulation ecosystem.
 
-## Phase 3: Enhanced Visualization & Analytics
+## Phase 3: Sparkling Inheritance & Evolution
 
-### Milestone 3.1: Advanced Visualization Controls
-- [ ] Zoom and pan controls
-- [ ] Path visualization for movement
-- [ ] Memory visualization overlays
-- [ ] Animation improvements
-- [ ] Selective visualization layers
-
-**Status**: Not started
-**Expected Completion**: May 4, 2025
-**Context**: This milestone will enhance the user's ability to observe and analyze Sparkling behavior through advanced visualization controls. These tools will enable users to focus on specific aspects of the simulation and track movement and decision patterns more effectively, improving the research and analysis capabilities of the platform.
-
-### Milestone 3.2: Analytics Dashboard
-- [ ] Simulation-wide statistics
-- [ ] Population charts
-- [ ] Resource distribution visualization
-
-**Status**: Not started
-**Expected Completion**: May 11, 2025
-**Context**: This milestone will provide users with quantitative data and analytics about the simulation. The dashboard will enable the study of population dynamics, resource utilization patterns, and other emergent behaviors across the entire simulation, creating a more comprehensive understanding of the ecosystem as a whole.
-
-## Phase 4: Sparkling Inheritance & Evolution
-
-### Milestone 4.1: Parameter Inheritance
+### Milestone 3.1: Parameter Inheritance
 - [ ] Parameter inheritance from successful Sparklings
 - [ ] Parameter variation algorithm
 - [ ] Parameter lineage visualization
@@ -110,10 +88,10 @@ This document tracks the implementation progress of Version 2 features for the S
 - [ ] Parameter evolution history
 
 **Status**: Not started
-**Expected Completion**: May 18, 2025
+**Expected Completion**: May 4, 2025
 **Context**: This milestone will establish the foundation for evolutionary mechanics by enabling successful decision parameters to be passed from existing Sparklings to new ones, with controlled variation. This creates a system where natural selection can occur within the simulation as successful strategies are more likely to be passed on to subsequent generations.
 
-### Milestone 4.2: Evolution Mechanics
+### Milestone 3.2: Evolution Mechanics
 - [ ] Selection pressures based on environment
 - [ ] Success metrics for different strategies
 - [ ] Branching evolution visualization
@@ -121,12 +99,37 @@ This document tracks the implementation progress of Version 2 features for the S
 - [ ] Genetic diversity management
 
 **Status**: Not started
+**Expected Completion**: May 11, 2025
+**Context**: This milestone will complete the evolutionary system, allowing the simulation to demonstrate how different behavioral strategies evolve in response to environmental conditions and resource availability. This creates a comprehensive platform for studying adaptive behaviors and evolutionary processes in a controlled virtual ecosystem.
+
+## Phase 4: Enhanced Visualization & Analytics
+
+### Milestone 4.1: Advanced Visualization Controls
+- [ ] Zoom and pan controls
+- [ ] Path visualization for movement
+- [ ] Memory visualization overlays
+- [ ] Animation improvements
+- [ ] Selective visualization layers
+
+**Status**: Not started
+**Expected Completion**: May 18, 2025
+**Context**: This milestone will enhance the user's ability to observe and analyze Sparkling behavior through advanced visualization controls. These tools will enable users to focus on specific aspects of the simulation and track movement and decision patterns more effectively, improving the research and analysis capabilities of the platform.
+
+### Milestone 4.2: Analytics Dashboard
+- [ ] Simulation-wide statistics
+- [ ] Population charts
+- [ ] Resource distribution visualization
+
+**Status**: Not started
 **Expected Completion**: May 25, 2025
-**Context**: This final milestone will complete the evolutionary system, allowing the simulation to demonstrate how different behavioral strategies evolve in response to environmental conditions and resource availability. This creates a comprehensive platform for studying adaptive behaviors and evolutionary processes in a controlled virtual ecosystem.
+**Context**: This milestone will provide users with quantitative data and analytics about the simulation. The dashboard will enable the study of population dynamics, resource utilization patterns, and other emergent behaviors across the entire simulation, creating a more comprehensive understanding of the ecosystem as a whole.
 
 ## Latest Updates
 
 ### April 20, 2025
+- Swapped Phase 3 (Enhanced Visualization & Analytics) and Phase 4 (Sparkling Inheritance & Evolution) in the implementation plan
+- Prioritized evolution features to come before advanced visualization features
+- Adjusted expected completion dates for upcoming milestones accordingly
 - Completed Milestone 2.5: UI and Simulation Parameter Improvements
 - Redesigned UI layout to create a draggable, minimizable control panel that never blocks the world map view
 - Fixed resource spawn rate slider functionality that was getting stuck at high values
