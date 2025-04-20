@@ -38,8 +38,18 @@ export class SparklingRenderer {
     const lastInferenceReasoning = core.lastInferenceReasoning;
     const homePosition = core.homePosition;
     
+    // Check if the sparkling is fading out and get fadeout progress
+    const isFading = core.isFadingOut || false;
+    const fadeoutProgress = core.fadeoutProgress || 0;
+    
     // Calculate the body size based on food level
     const bodySize = 10 + foodRatio * 5;
+    
+    // If the Sparkling is fading out, apply special rendering
+    if (isFading) {
+      this.renderFadingOut(context, position, color, totalTime, fadeoutProgress, bodySize);
+      return;
+    }
     
     // Determine body color based on food level - add pulsing effect for low food
     let bodyColor = color;
@@ -317,6 +327,84 @@ export class SparklingRenderer {
     if (debug) {
       this.renderParameterIndicators(context, position, parameters);
       this.renderMemory(context, position, memory, color, totalTime);
+    }
+  }
+  
+  /**
+   * Render a Sparkling that is fading out
+   */
+  private renderFadingOut(
+    context: CanvasRenderingContext2D, 
+    position: Position, 
+    color: string, 
+    totalTime: number,
+    fadeoutProgress: number,
+    bodySize: number
+  ): void {
+    // Calculate opacity based on fadeout progress (1.0 -> 0.0)
+    const opacity = 1.0 - fadeoutProgress;
+    
+    // Parse the color to get RGB values
+    const parsedColor = this.parseColor(color);
+    
+    // Draw fading body with decreasing opacity
+    context.fillStyle = `rgba(${parsedColor.r}, ${parsedColor.g}, ${parsedColor.b}, ${opacity})`;
+    context.beginPath();
+    context.arc(position.x, position.y, bodySize, 0, Math.PI * 2);
+    context.fill();
+    
+    // Draw dissipating particles as fadeout progresses
+    const particleCount = Math.floor(fadeoutProgress * 20);
+    
+    for (let i = 0; i < particleCount; i++) {
+      // Calculate particle position - particles move outward as fadeout progresses
+      const angle = (i / particleCount) * Math.PI * 2 + totalTime * 0.5;
+      const distance = bodySize * (0.5 + fadeoutProgress * 3);
+      const particleX = position.x + Math.cos(angle) * distance;
+      const particleY = position.y + Math.sin(angle) * distance;
+      
+      // Calculate particle size - particles get smaller as they move outward
+      const particleSize = 3 * (1 - fadeoutProgress * 0.7);
+      
+      // Calculate particle opacity - particles fade as they move outward
+      const particleOpacity = opacity * 0.8 * (1 - (i % 3) / 3);
+      
+      // Draw particle with pulsing effect
+      const pulseIntensity = 0.5 + 0.5 * Math.sin(totalTime * 8 + i);
+      context.fillStyle = `rgba(${parsedColor.r}, ${parsedColor.g}, ${parsedColor.b}, ${particleOpacity * pulseIntensity})`;
+      context.beginPath();
+      context.arc(particleX, particleY, particleSize, 0, Math.PI * 2);
+      context.fill();
+    }
+    
+    // Draw fading label
+    context.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+    context.font = '8px Arial';
+    context.textAlign = 'center';
+    context.fillText('fading away', position.x, position.y - bodySize - 10);
+    
+    // Draw a subtle glow effect
+    const glowSize = bodySize * (1 + fadeoutProgress * 0.8);
+    const glowOpacity = 0.2 * (1 - fadeoutProgress);
+    
+    context.fillStyle = `rgba(${parsedColor.r}, ${parsedColor.g}, ${parsedColor.b}, ${glowOpacity})`;
+    context.beginPath();
+    context.arc(position.x, position.y, glowSize, 0, Math.PI * 2);
+    context.fill();
+    
+    // Draw animated rings that expand outward as the fadeout progresses
+    const ringCount = Math.min(3, Math.floor(fadeoutProgress * 5));
+    
+    for (let i = 0; i < ringCount; i++) {
+      const ringProgress = (fadeoutProgress * 0.8) + (i * 0.1);
+      const ringSize = bodySize * (1 + ringProgress * 5);
+      const ringOpacity = 0.4 * (1 - ringProgress) * opacity;
+      
+      context.strokeStyle = `rgba(${parsedColor.r}, ${parsedColor.g}, ${parsedColor.b}, ${ringOpacity})`;
+      context.lineWidth = 1.5 * (1 - fadeoutProgress * 0.5);
+      context.beginPath();
+      context.arc(position.x, position.y, ringSize, 0, Math.PI * 2);
+      context.stroke();
     }
   }
   

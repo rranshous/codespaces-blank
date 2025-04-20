@@ -33,12 +33,14 @@ This document tracks the implementation progress of Version 2 features for the S
 **Context**: This milestone improves user understanding of the food consumption system by providing clear visual indicators and detailed information. These enhancements enable users to better monitor the simulation health and understand Sparkling decision-making related to food resources, which is essential for observing and analyzing the ecosystem dynamics.
 
 ### Milestone 2.2: Fadeout & New Sparkling Mechanics
-- [ ] Gradual fadeout process when both food and neural energy are depleted
-- [ ] Visual effects for Sparkling fadeout
+- [x] Gradual fadeout process when both food and neural energy are depleted
+- [x] Visual effects for Sparkling fadeout
 
-**Status**: Not started
-**Expected Completion**: April 27, 2025
-**Context**: This milestone will implement the fadeout mechanics for resource-depleted Sparklings, creating a more realistic lifecycle simulation. The visual effects will help users understand when Sparklings are disappearing from the simulation due to resource depletion.
+**Status**: Completed
+**Completion Date**: April 20, 2025
+**Notes**: Implemented a fadeout process for Sparklings when both food and neural energy are fully depleted. Added visual effects to show the gradual disappearance, including fading opacity, expanding rings, and dissipating particles. Restructured the Sparkling class into a more modular architecture to better support lifecycle features and improve code organization. The fading Sparklings are now automatically removed from the simulation when the fadeout process is complete.
+
+**Context**: This milestone creates a more realistic lifecycle for Sparklings by implementing an elegant exit from the simulation when resources are depleted. The visual fadeout effects provide clear feedback to users about why Sparklings are disappearing, improving the overall understanding of the simulation mechanics. This sets the foundation for the upcoming population replacement features.
 
 ### Milestone 2.3: Add new sparklings to replaced those which fade out
 - [ ] Implement mechanics for new Sparklings to appear
@@ -103,18 +105,19 @@ This document tracks the implementation progress of Version 2 features for the S
 ## Latest Updates
 
 ### April 20, 2025
+- Completed Milestone 2.2: Fadeout & New Sparkling Mechanics
+- Implemented fadeout process for Sparklings when both food and neural energy are depleted
+- Added visual effects for the fadeout process including fading opacity, expanding rings, and dissipating particles
+- Restructured Sparkling class into a more modular architecture with specialized components
+- Added automatic removal of faded Sparklings from the simulation
+- Introduced a new FADING state for Sparklings in the fadeout process
+- Updated the sparklingTypes.ts to include the new state
+- Enhanced SparklingRenderer to visualize the fadeout process
+- Modified the Simulation class to handle the removal of faded Sparklings
 - Updated implementation plan and progress tracking for Phase 2 milestones
 - Split Milestone 2.2 into three separate milestones for better tracking: Fadeout & New Sparkling Mechanics, Add new sparklings, and Population Control
 - Refined milestone descriptions and tasks to better align with implementation goals
 - Adjusted expected completion dates for upcoming milestones
-- Improved Milestone 2.1: Food Monitoring & Visualization based on user feedback
-- Enhanced critical hunger visualization with pulsing food bar outlines instead of separate icon
-- Improved memory visualization by showing only the most important food and energy memories
-- Used color-coded connections to distinguish between food (orange) and energy (purple) memories
-- Increased memory importance for food and energy resources to make them persist longer
-- Fixed issue with memory connections disappearing too quickly
-- Updated documentation with clearer context for each phase and milestone
-- Added expected completion dates for upcoming milestones
 
 ### April 19, 2025
 - Completed Milestone 2.1: Food Monitoring & Visualization

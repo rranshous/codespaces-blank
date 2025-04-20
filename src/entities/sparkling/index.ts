@@ -48,11 +48,20 @@ export class Sparkling extends SparklingCore {
    * Update the Sparkling's state and position
    */
   public update(deltaTime: number, world: World): void {
+    // Update total time
+    this.totalTime += deltaTime;
+    
     // Update memory system's time
     this.memoryManager.updateTime(deltaTime);
     
     // Update state timer
     this.stateTimer += deltaTime;
+    
+    // If the Sparkling is fading out, only update the fadeout progress
+    if (this.isFadingOut) {
+      this.resources.updateFadeout(deltaTime);
+      return;
+    }
     
     // Consume resources over time
     this.resources.consumeResources(deltaTime);
@@ -105,6 +114,27 @@ export class Sparkling extends SparklingCore {
    */
   public getLastInferenceInfo(): { timestamp: number; success: boolean; reasoning: string } {
     return this.memoryManager.getLastInferenceInfo();
+  }
+  
+  /**
+   * Check if the Sparkling is ready to be removed from the simulation
+   */
+  public shouldBeRemoved(): boolean {
+    return super.shouldBeRemoved();
+  }
+  
+  /**
+   * Check if the Sparkling is currently fading out
+   */
+  public isFading(): boolean {
+    return super.isFading();
+  }
+  
+  /**
+   * Get the fadeout progress (0-1)
+   */
+  public getFadeoutProgress(): number {
+    return super.getFadeoutProgress();
   }
   
   // Methods from SparklingMovement

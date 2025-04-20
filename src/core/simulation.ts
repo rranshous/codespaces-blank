@@ -370,8 +370,28 @@ export class Simulation {
       sparkling.update(deltaTime, this.world);
     }
     
+    // Check for sparklings that have completed fadeout and need to be removed
+    this.removeCompletedFadeouts();
+    
     // Check for sparkling encounters
     this.checkSparklingEncounters();
+  }
+  
+  /**
+   * Remove Sparklings that have completed their fadeout process
+   */
+  private removeCompletedFadeouts(): void {
+    const fadedSparklings = this.sparklings.filter(sparkling => sparkling.shouldBeRemoved());
+    
+    // If any Sparklings need to be removed, log it and filter them out
+    if (fadedSparklings.length > 0) {
+      for (const sparkling of fadedSparklings) {
+        console.log(`Removing Sparkling #${sparkling.getId()} after fadeout completion.`);
+      }
+      
+      // Remove the faded Sparklings from the array
+      this.sparklings = this.sparklings.filter(sparkling => !sparkling.shouldBeRemoved());
+    }
   }
 
   /**

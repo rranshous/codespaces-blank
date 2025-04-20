@@ -10,7 +10,8 @@ export enum SparklingState {
   SEEKING_ENERGY = 'seeking_energy',
   COLLECTING = 'collecting',
   RESTING = 'resting',
-  COMPETING = 'competing'  // New state for resource competition
+  COMPETING = 'competing',  // State for resource competition
+  FADING = 'fading'         // New state for fadeout process
 }
 
 /**

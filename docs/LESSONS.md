@@ -19,6 +19,21 @@ This document captures important lessons, insights, and best practices we've dis
 
 2. **Parameter Dependencies**: Some parameters have dependencies on others, and changing one parameter may require adjusting related parameters to maintain balance.
 
+### Entity Lifecycle Management
+
+1. **Fadeout Mechanics**: When implementing entity fadeout processes:
+   - Use a dedicated state (e.g., FADING) for entities that are in the process of being removed
+   - Implement a multi-step process: mark for removal → visual fadeout → actual removal
+   - Handle update logic differently for fading entities (e.g., skip normal resource consumption)
+   - Use separate flags for tracking the fadeout progress and completion status
+   - Ensure renderer properly handles visualization of the fading state with appropriate visual cues
+
+2. **Entity Removal**: When removing entities from collections:
+   - Use a two-phase approach: identify entities to remove, then filter the collection
+   - Log removal events for debugging purposes
+   - Ensure any references to removed entities are properly handled to avoid memory leaks
+   - Consider performance implications of frequent collection filtering
+
 ## Memory System
 
 1. **Memory Importance**: Memory importance parameters need to be properly passed from Sparkling to Memory instances, and they should be updated when the Sparkling's parameters change.
@@ -68,3 +83,20 @@ This document captures important lessons, insights, and best practices we've dis
 4. **Protected vs Private**: Using protected access modifiers in base classes allows derived classes to access necessary properties, while still maintaining encapsulation from outside code.
 
 5. **Internal Access Patterns**: When refactoring existing code into a component-based architecture, careful consideration is needed for how components access shared state. Consider using a core component with protected members that can be safely accessed by specialized components.
+
+## Refactoring and Module Management
+
+1. **Naming Consistency**: When implementing properties and methods that involve the same concept:
+   - Maintain consistent naming between property names and their related methods
+   - Inconsistent names like `isReadyToRemove` (property) vs `isReadyToBeRemoved()` (method) cause TypeScript errors
+   - Document naming patterns in comments to help maintain consistency
+
+2. **Module Re-exports**: When refactoring monolithic classes into a modular structure:
+   - Consider using re-export files to maintain backward compatibility
+   - A simple file that re-exports from the new location (e.g., `export { Sparkling } from './sparkling/index';`) can avoid breaking changes in import paths
+   - This technique allows gradual migration without requiring simultaneous updates to all import statements
+
+3. **Type Visibility**: When using TypeScript:
+   - Remember that all public methods from parent classes need to be defined in child classes if they override implementation
+   - Protected members from parent classes are not automatically visible to external code through the child class
+   - Be cautious with `super` calls using `this` as context, as TypeScript may see method/property type mismatches

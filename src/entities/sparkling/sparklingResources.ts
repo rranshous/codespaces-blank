@@ -23,6 +23,9 @@ export class SparklingResources {
     const stats = core.stats;
     const state = this.sparklingCore.getState();
     
+    // Don't consume resources if already fading out
+    if (core.isFadingOut) return;
+    
     // Consume food at base rate
     core.food = Math.max(0, core.food - stats.foodConsumptionRate * deltaTime);
     
@@ -44,6 +47,60 @@ export class SparklingResources {
     if (core.food < stats.maxFood * parameters.criticalHungerThreshold) {
       const criticalEnergyLoss = deltaTime * 2; // Lose energy faster when critically hungry
       core.neuralEnergy = Math.max(0, core.neuralEnergy - criticalEnergyLoss);
+    }
+    
+    // Check if both food and neural energy are depleted to initiate fadeout
+    this.checkResourceDepletion();
+  }
+  
+  /**
+   * Check if the Sparkling's resources are depleted and start fadeout if necessary
+   */
+  private checkResourceDepletion(): void {
+    const core = this.sparklingCore as any;
+    
+    // If both food and neural energy are completely depleted, start fadeout
+    if (core.food <= 0 && core.neuralEnergy <= 0 && !core.isFadingOut) {
+      this.startFadeout();
+    }
+  }
+  
+  /**
+   * Start the fadeout process for this Sparkling
+   */
+  private startFadeout(): void {
+    const core = this.sparklingCore as any;
+    
+    // Set fadeout flag and update state
+    core.isFadingOut = true;
+    core.state = SparklingState.FADING;
+    core.stateTimer = 0;
+    core.fadeoutProgress = 0;
+    
+    // Stop movement
+    core.velocity = { vx: 0, vy: 0 };
+    
+    console.log(`Sparkling ${core.id} has started fading out due to resource depletion.`);
+  }
+  
+  /**
+   * Update the fadeout progress
+   * @param deltaTime Time elapsed since last update
+   */
+  public updateFadeout(deltaTime: number): void {
+    const core = this.sparklingCore as any;
+    
+    // Only update if we're fading out
+    if (!core.isFadingOut) return;
+    
+    // Progress the fadeout
+    const progressIncrement = deltaTime / core.fadeoutDuration;
+    core.fadeoutProgress = Math.min(1.0, core.fadeoutProgress + progressIncrement);
+    
+    // If fadeout is complete, mark ready for removal
+    if (core.fadeoutProgress >= 1.0) {
+      core.isReadyToRemove = true;
+      console.log(`Sparkling ${core.id} has completed fadeout and is ready to be removed.`);
     }
   }
   

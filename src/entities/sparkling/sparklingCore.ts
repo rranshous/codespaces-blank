@@ -48,6 +48,12 @@ export class SparklingCore {
   protected territoryCenter: Position | null = null; // Center of the Sparkling's territory
   protected territoryRadius: number = 0; // Radius of the Sparkling's territory
   
+  // Fadeout properties
+  protected fadeoutProgress: number = 0;       // Progress from 0 to 1
+  protected fadeoutDuration: number = 5.0;     // How long the fadeout takes in seconds
+  protected isFadingOut: boolean = false;      // Whether this sparkling is currently fading out
+  protected isReadyToRemove: boolean = false;  // Whether this sparkling can be removed from simulation
+  
   /**
    * Create a new SparklingCore
    */
@@ -269,5 +275,26 @@ export class SparklingCore {
     
     // Check resource preference to determine what we're likely collecting
     return this.parameters.resourcePreference <= 0; // Preference for food
+  }
+  
+  /**
+   * Check if the Sparkling is ready to be removed from the simulation
+   */
+  public shouldBeRemoved(): boolean {
+    return this.isReadyToRemove;
+  }
+  
+  /**
+   * Get the fadeout progress (0-1)
+   */
+  public getFadeoutProgress(): number {
+    return this.fadeoutProgress;
+  }
+  
+  /**
+   * Check if the Sparkling is currently fading out
+   */
+  public isFading(): boolean {
+    return this.isFadingOut;
   }
 }
